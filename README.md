@@ -6,7 +6,7 @@ This module contains DSC resources for the configuration of PI System security. 
 
 The latest release version of the PI Security DSC from [Releases](https://github.com/osisoft/PI-Security-Audit-Tools/releases).
 
-If you are looking for the PI Security audit checks, please see the [PI Security Audit Tools](https://github.com/osisoft/PI-Security-Audit-Tools) repository. 
+If you are looking for the PI Security audit checks, please see the [PI Security Audit Tools](https://github.com/osisoft/PI-Security-DSC) repository.
 
 ## Discussion
 
