@@ -4,9 +4,9 @@
 
 This module contains DSC resources for the configuration of PI System security.  
 
-Get the latest release version of the PI Security DSC from [Releases](https://github.com/hpaul-osi/PI-Security-DSC/releases).
+Get the latest release version of the PI Security DSC from [Releases](https://github.com/osisoft/PI-Security-DSC/releases).
 
-Check out the [Wiki](https://github.com/hpaul-osi/PI-Security-DSC/wiki) for tutorials and more information on the project.
+Check out the [Wiki](https://github.com/osisoft/PI-Security-DSC/wiki) for tutorials and more information on the project.
 
 ## Discussion
 
