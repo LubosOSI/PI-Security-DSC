@@ -23,6 +23,6 @@ class xAFIdentity : OMI_BaseResource
     [Required] String AFServer;
     [Write, ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
     [Write] Boolean IsEnabled;
-	[Write] String Description;
+    [Write] String Description;
 };
 

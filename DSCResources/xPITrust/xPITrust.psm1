@@ -1,4 +1,4 @@
-﻿# ************************************************************************
+# ************************************************************************
 # *
 # * Copyright 2016 OSIsoft, LLC
 # * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,6 @@ function Get-TargetResource
         Ensure = $Ensure
     }
 }
-
 
 function Set-TargetResource
 {
@@ -146,7 +145,6 @@ function Set-TargetResource
         Remove-PITrust -Connection $Connection -Name $PIResource.Name   
     }
 }
-
 
 function Test-TargetResource
 {

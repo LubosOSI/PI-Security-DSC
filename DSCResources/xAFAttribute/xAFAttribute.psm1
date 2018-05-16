@@ -1,4 +1,4 @@
-﻿# ************************************************************************
+# ************************************************************************
 # *
 # * Copyright 2016 OSIsoft, LLC
 # * Licensed under the Apache License, Version 2.0 (the "License");
@@ -162,7 +162,6 @@ function Get-TargetResource
     $getTargetResourceResult
 }
 
-
 function Set-TargetResource
 {
     [CmdletBinding()]
@@ -291,7 +290,6 @@ function Set-TargetResource
         }
     }
 }
-
 
 function Test-TargetResource
 {

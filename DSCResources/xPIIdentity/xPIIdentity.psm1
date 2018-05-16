@@ -50,7 +50,6 @@ function Get-TargetResource
             }
 }
 
-
 function Set-TargetResource
 {
     [CmdletBinding()]
@@ -133,7 +132,6 @@ function Set-TargetResource
         Remove-PIIdentity -Connection $Connection -Name $Name   
     }
 }
-
 
 function Test-TargetResource
 {

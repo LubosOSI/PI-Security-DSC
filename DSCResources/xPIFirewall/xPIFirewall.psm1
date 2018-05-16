@@ -45,7 +45,6 @@ function Get-TargetResource
             }
 }
 
-
 function Set-TargetResource
 {
     [CmdletBinding()]
@@ -79,7 +78,6 @@ function Set-TargetResource
         Add-PIFirewall -Connection $Connection -Hostmask $Hostmask -Value $Value 
     }
 }
-
 
 function Test-TargetResource
 {

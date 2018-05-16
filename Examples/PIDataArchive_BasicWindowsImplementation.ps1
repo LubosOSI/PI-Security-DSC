@@ -1,4 +1,4 @@
-﻿# ************************************************************************
+# ************************************************************************
 # *
 # * Copyright 2016 OSIsoft, LLC
 # * Licensed under the Apache License, Version 2.0 (the "License");
@@ -103,8 +103,8 @@ Configuration PIDataArchive_BasicWindowsImplementation
         
         [String]
         $PIWebAppsADGroup = '',
-		
-		[String]
+        
+        [String]
         $PIConnectorRelaysADGroup = '',
         
         [String]
@@ -127,8 +127,8 @@ Configuration PIDataArchive_BasicWindowsImplementation
                             @{Name='PI Users';Description='Identity for the Read-only users';},
                             @{Name='PI Points&Analysis Creator';Description='Identity for PIACEService, PIAFService and users that can create and edit PI Points';}
                             @{Name='PI Web Apps';Description='Identity for PI Vision, PI WebAPI, and PI WebAPI Crawler';},
-							@{Name='PI Connector Relays';Description='Identity for PI Connector Relays';},
-							@{Name='PI Data Collection Managers';Description='Identity for PI Data Collection Managers';}
+                            @{Name='PI Connector Relays';Description='Identity for PI Connector Relays';},
+                            @{Name='PI Data Collection Managers';Description='Identity for PI Data Collection Managers';}
                           )
 
         Foreach($BasicWISRole in $BasicWISRoles)
@@ -191,8 +191,8 @@ Configuration PIDataArchive_BasicWindowsImplementation
                                 @{Name=$PIPointsAnalysisCreatorADGroup;Identity='PI Points&Analysis Creator'},
                                 @{Name=$PIUsersADGroup;Identity='PI Users'},
                                 @{Name=$PIWebAppsADGroup;Identity='PI Web Apps'},
-								@{Name=$PIConnectorRelaysADGroup;Identity='PI Connector Relays'},
-								@{Name=$PIDataCollectionManagersADGroup;Identity='PI Data Collection Managers'},
+                                @{Name=$PIConnectorRelaysADGroup;Identity='PI Connector Relays'},
+                                @{Name=$PIDataCollectionManagersADGroup;Identity='PI Data Collection Managers'},
                                 @{Name=$DSCIdentity;Identity='piadmins'}
                             )
 
