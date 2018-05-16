@@ -63,7 +63,6 @@ function Get-TargetResource
     $returnValue
 }
 
-
 function Set-TargetResource
 {
     [CmdletBinding()]
@@ -144,7 +143,6 @@ function Set-TargetResource
         $identity.CheckIn()
     }
 }
-
 
 function Test-TargetResource
 {
