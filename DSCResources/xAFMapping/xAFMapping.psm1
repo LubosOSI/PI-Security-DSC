@@ -109,7 +109,6 @@ function Get-TargetResource
     $returnValue
 }
 
-
 function Set-TargetResource
 {
     [CmdletBinding()]
@@ -221,7 +220,6 @@ function Set-TargetResource
     }
 }
 
-
 function Test-TargetResource
 {
     [CmdletBinding()]
@@ -255,6 +253,4 @@ function Test-TargetResource
     return (Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource)
 }
 
-
 Export-ModuleMember -Function *-TargetResource
-

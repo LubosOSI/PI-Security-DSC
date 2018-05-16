@@ -176,6 +176,4 @@ function Test-TargetResource
     return (Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource)
 }
 
-
 Export-ModuleMember -Function *-TargetResource
-

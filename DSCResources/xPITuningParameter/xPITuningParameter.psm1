@@ -38,7 +38,7 @@ function Get-TargetResource
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
-				    Name = $PIResource.Name;
+                    Name = $PIResource.Name;
                     Default = $PIResource.Default;
                     Ensure = $Ensure;
                     Value = $PIResource.Value;

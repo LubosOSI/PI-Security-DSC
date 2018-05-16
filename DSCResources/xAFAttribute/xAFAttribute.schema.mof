@@ -21,9 +21,9 @@
 class xAFAttribute : OMI_BaseResource
 {
     [Key, Description("Specifies the name of the attribute.")] string Name;
-	[Key, Description("Specifies the path from the database to the Element.")] string ElementPath;
+    [Key, Description("Specifies the path from the database to the Element.")] string ElementPath;
     [Key] string AFServer;
-	[Write,ValueMap{"Present", "Absent"},Values{"Present", "Absent"}] string Ensure;
+    [Write,ValueMap{"Present", "Absent"},Values{"Present", "Absent"}] string Ensure;
     [Write] string Value[];
     [Write,ValueMap{"Boolean", "Byte", "DateTime", "Double", "Int16", "Int32", "Int64", "Single", "String"},Values{"Boolean", "Byte", "DateTime", "Double", "Int16", "Int32", "Int64", "Single", "String"}] string Type;
     [Write] Boolean IsArray;
