@@ -22,7 +22,7 @@ class xPITrust : OMI_BaseResource
     [Write] String WindowsDomain;
     [Write] String Description;
     [Write] Boolean Enabled;
-    [Required, Description("PI Data Archive name for connection")] String PIDataArchive;
+    [Write, Description("PI Data Archive name for connection")] String PIDataArchive;
     [Write] String NetworkPath;
     [Write] String WindowsAccount;
     [Key] String Name;

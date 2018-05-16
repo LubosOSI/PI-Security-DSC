@@ -28,9 +28,8 @@ function Get-TargetResource
         [System.String]
         $Name,
 
-        [parameter(Mandatory = $true)]
         [System.String]
-        $PIDataArchive
+        $PIDataArchive = "localhost"
     )
 
     $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
@@ -62,9 +61,8 @@ function Set-TargetResource
         [System.String]
         $Value,
 
-        [parameter(Mandatory = $true)]
         [System.String]
-        $PIDataArchive
+        $PIDataArchive = "localhost"
     )
     
     $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
@@ -96,9 +94,8 @@ function Test-TargetResource
         [System.String]
         $Value,
 
-        [parameter(Mandatory = $true)]
         [System.String]
-        $PIDataArchive
+        $PIDataArchive = "localhost"
     )
 
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive

@@ -24,9 +24,8 @@ function Get-TargetResource
     [OutputType([System.Collections.Hashtable])]
     param
     (
-        [parameter(Mandatory = $true)]
         [System.String]
-        $PIDataArchive,
+        $PIDataArchive = "localhost",
 
         [parameter(Mandatory = $true)]
         [System.String]
@@ -65,9 +64,8 @@ function Set-TargetResource
         [System.String]
         $Description="",
 
-        [parameter(Mandatory = $true)]
         [System.String]
-        $PIDataArchive,
+        $PIDataArchive = "localhost",
 
         [ValidateSet("Present","Absent")]
         [System.String]
@@ -150,9 +148,8 @@ function Test-TargetResource
         [System.String]
         $Description,
 
-        [parameter(Mandatory = $true)]
         [System.String]
-        $PIDataArchive,
+        $PIDataArchive = "localhost",
 
         [ValidateSet("Present","Absent")]
         [System.String]
