@@ -236,7 +236,7 @@ Configuration PIDataArchive_BasicWindowsImplementation
                                     @{Name='PITransferRecords';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Users: A(r)'},
                                     @{Name='PITRUST';Security='piadmins: A(r,w)'},
                                     @{Name='PITUNING';Security='piadmins: A(r,w)'},
-                                    @{Name='PIUSER';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Connector Relays: A(r,w) | PI Data Collection Managers: A(r) | PI Users: A(r) | PI Web Apps: A(r)'}
+                                    @{Name='PIUSER';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Connector Relays: A(r) | PI Data Collection Managers: A(r) | PI Users: A(r) | PI Web Apps: A(r)'}
                                   )
 
         Foreach($DatabaseSecurityRule in $DatabaseSecurityRules)
