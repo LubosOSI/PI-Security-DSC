@@ -22,6 +22,6 @@ class xPIFirewall : OMI_BaseResource
     [Write, ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
     [Write, ValueMap{"Allow","Disallow","Unknown"}, Values{"Allow","Disallow","Unknown"}] String Value;
     [Key] String Hostmask;
-    [Required, Description("PI Data Archive name for connection")] String PIDataArchive;
+    [Write, Description("PI Data Archive name for connection")] String PIDataArchive;
 };
 

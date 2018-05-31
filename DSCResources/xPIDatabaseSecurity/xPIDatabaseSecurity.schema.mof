@@ -22,6 +22,6 @@ class xPIDatabaseSecurity : OMI_BaseResource
     [Write] String Security;
     [Key] String Name;
     [Write, ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
-    [Required, Description("PI Data Archive name for connection")] String PIDataArchive;
+    [Write, Description("PI Data Archive name for connection")] String PIDataArchive;
 };
 

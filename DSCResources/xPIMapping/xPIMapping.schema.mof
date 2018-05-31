@@ -21,7 +21,7 @@ class xPIMapping : OMI_BaseResource
 {
     [Key] String PrincipalName;
     [Write] String Description;
-    [Required, Description("PI Data Archive name for connection")] String PIDataArchive;
+    [Write, Description("PI Data Archive name for connection")] String PIDataArchive;
     [Write, ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
     [Write] Boolean Enabled;
     [Write] String Name;
