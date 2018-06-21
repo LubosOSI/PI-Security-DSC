@@ -1,7 +1,7 @@
 /*
 # ************************************************************************
 # *
-# * Copyright 2016 OSIsoft, LLC
+# * Copyright 2018 OSIsoft, LLC
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 [ClassVersion("0.1.0.0"), FriendlyName("PIAccessControl")]
 class xPIAccessControl : OMI_BaseResource
 {
-    [Write, ValueMap{"Read","Write","Read,Write"}, Values{"Read","Write","Read,Write"}] String Access;
+    [Write, ValueMap{"Read","Write","Read, Write","Read,Write","r","w","r,w"}, Values{"Read","Write","Read, Write","Read,Write","r","w","r,w"}] String Access;
     [Key, Description("Database name for the PIDatabaseSecurity Type. PI Point for DataSecurity or PtSecurity Type.")] String Name;
 	[Required] String Identity;
 	[Required, ValueMap{"PIDatabaseSecurity","PtSecurity","DataSecurity"}, Values{"PIDatabaseSecurity","PtSecurity","DataSecurity"}] String Type;
