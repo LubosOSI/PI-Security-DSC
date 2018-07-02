@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,10 +24,10 @@ $testingModules = @( 'PSScriptAnalyzer', 'Pester' )
 #region - Internal Helper Functions
 
 function InstallTestingModule ($moduleName)
-{	
+{
 	$moduleObj = $null
 	$moduleObj = Get-InstalledModule -Name $moduleName -ErrorAction 'SilentlyContinue'
-	if($moduleObj -eq $null)
+	if($null -eq $moduleObj)
 	{
 		# Install the PSScriptAnalyzer module for all users on this computer.
 		Install-Module -Name $moduleName -Repository 'PSGallery' -Scope 'AllUsers'
@@ -35,7 +35,7 @@ function InstallTestingModule ($moduleName)
 	else
 	{
 		$msg = '{0} module {1} is already installed' -f $moduleName, $moduleObj.Version.ToString()
-		Write-Host $msg
+		Write-Output $msg
 	}
 }
 
@@ -48,7 +48,7 @@ try
 	# Try to import PowerShellGet module.
 	$moduleObj = $null
 	$moduleObj = Import-Module 'PowerShellGet' -PassThru
-	if($moduleObj -eq $null)
+	if($null -eq $moduleObj)
 	{
 		$msg = 'PowerShellGet module is not installed on this machine'
 		Throw $msg
@@ -58,7 +58,7 @@ try
 	$repositoryObj = $null
 	$repositoryObj = Get-PSRepository -Name 'PSGallery'
 
-	if($repositoryObj -eq $null)
+	if($null -eq $repositoryObj)
 	{
 		# Register the PowerShell Gallery.
 		Register-PSRepository -Name 'PSGallery' -SourceLocation 'https://www.powershellgallery.com/api/v2/' -InstallationPolicy 'Trusted'

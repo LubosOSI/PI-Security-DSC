@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,6 +21,7 @@ Import-Module -Name (Join-Path -Path (Split-Path $PSScriptRoot -Parent) `
 function Get-NTAccount
 {
     [CmdletBinding()]
+    [OutputType([System.Security.Principal.NTAccount])]
     param
     (
         [string]$AccountName
@@ -34,7 +35,7 @@ function Get-NTAccount
     }
     elseif($splitAccount.Count -eq 2)
     {
-        # Pass both domain and username 
+        # Pass both domain and username
         $ntAccount = New-Object System.Security.Principal.NTAccount `
             -ArgumentList $splitAccount[0], $splitAccount[1]
     }
@@ -50,6 +51,7 @@ function Get-NTAccount
     try
     {
         $SID = $ntAccount.Translate([System.Security.Principal.SecurityIdentifier])
+        Write-Verbose "Successfully resolved $AccountName to $SID"
     }
     catch
     {
@@ -93,6 +95,7 @@ function Get-TargetResource
         throw "Could not locate AF Server '$AFServer' in known servers table"
     }
 
+    Write-Verbose "Getting AF Mapping '$Name'"
     $mapping = $AF.SecurityMappings[$Name]
 
     $Ensure = Get-PIResource_Ensure -PIResource $mapping -Verbose:$VerbosePreference
@@ -167,21 +170,21 @@ function Set-TargetResource
         if($PIResource.Ensure -eq "Present")
         {
             <# Some special handling required if specified Account is different
-            than the resource's current Account. Must recreate the AF Mapping 
+            than the resource's current Account. Must recreate the AF Mapping
             because the mapping's Account is read-only. #>
             $deleteRequired = $false
             if($Account -ne $PIResource.Account) { $deleteRequired = $true }
 
             <# Since the identity is present, we must perform due diligence to preserve settings
-            not explicitly defined in the config. Remove $PSBoundParameters and those not used 
+            not explicitly defined in the config. Remove $PSBoundParameters and those not used
             for the write operation (Ensure, AFServer). #>
             $ParametersToOmit = @('Ensure', 'AFServer') + $PSBoundParameters.Keys
             $ParametersToOmit | Foreach-Object { $null = $PIResource.Remove($_) }
 
             # Set the parameter values we want to keep to the current resource values.
             Foreach($Parameter in $PIResource.GetEnumerator())
-            { 
-                Set-Variable -Name $Parameter.Key -Value $Parameter.Value -Scope Local 
+            {
+                Set-Variable -Name $Parameter.Key -Value $Parameter.Value -Scope Local
             }
 
             Write-Verbose "Setting AF Mapping '$Name'"
@@ -248,6 +251,7 @@ function Test-TargetResource
         $Account
     )
 
+    Write-Verbose "Testing AF Mapping: '$Name'"
     $PIResource = Get-TargetResource -Name $Name -AFServer $AFServer -Verbose:$VerbosePreference
 
     return (Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource)

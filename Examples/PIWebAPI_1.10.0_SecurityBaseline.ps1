@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,7 +23,7 @@ This example configuration covers a baseline configuration for the PI Web API
 
 .DESCRIPTION
 
-This configuration sets the security-related attributes on the PI Web API 
+This configuration sets the security-related attributes on the PI Web API
 configuration element.
 
 .EXAMPLE
@@ -36,12 +36,12 @@ Name of the PI Web API server.
 
 .PARAMETER PIWebAPIConfigElementPath
 
-Full element path to the PI Web API "System Configuration" config element on 
+Full element path to the PI Web API "System Configuration" config element on
 the PI AF Server.
 
 .PARAMETER CorsOrigins
 
-Allowable origins from which CORS requests will be allowed, separated by commas. 
+Allowable origins from which CORS requests will be allowed, separated by commas.
 This should include the domain names of any other sites which will make requests
 to the PI Web API.
 
@@ -72,11 +72,11 @@ Configuration PIWebAPI_1.10.0_SecurityBaseline
     Import-DscResource -ModuleName PISecurityDSC
 
     $configAttributes = @(
-        @{ 
-            Name='AuthenticationMethods'; 
-            Type='String'; 
-            IsArray=$true; 
-            Value=@('Kerberos') 
+        @{
+            Name='AuthenticationMethods';
+            Type='String';
+            IsArray=$true;
+            Value=@('Kerberos')
         },
         @{
             Name='CorsExposedHeaders';

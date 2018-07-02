@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -65,15 +65,15 @@ function Set-TargetResource
     )
 
     $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    
+
     if($Ensure -eq 'Absent')
-    { 
-        <# Setting database security to only piadmin access is as restrictive as it can be 
+    {
+        <# Setting database security to only piadmin access is as restrictive as it can be
         since piadmin cannot be denied. #>
-        Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security "piadmin: A(r,w)" 
+        Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security "piadmin: A(r,w)"
     }
     else
-    { 
+    {
         if($Name -eq 'PIBATCHLEGACY')
         {
             if($(Get-Service pibatch -ComputerName $PIDataArchive).Status -eq 'Running')
@@ -102,7 +102,7 @@ function Set-TargetResource
         }
         else
         {
-            Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security 
+            Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security
         }
     }
 }
@@ -132,7 +132,7 @@ function Test-TargetResource
 
     if($PIResource.Ensure -eq 'Present' -and $Ensure -eq 'Present')
     {
-        return $(Compare-PIDataArchiveACL -Desired $Security -Current $PIResource.Security -Verbose:$VerbosePreference)    
+        return $(Compare-PIDataArchiveACL -Desired $Security -Current $PIResource.Security -Verbose:$VerbosePreference)
     }
     else
     {

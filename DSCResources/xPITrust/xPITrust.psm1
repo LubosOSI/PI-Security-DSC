@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,6 +33,7 @@ function Get-TargetResource
     )
 
     $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Write-Verbose "Getting PI Trust: '$Name'"
     $PIResource = Get-PITrust -Connection $Connection -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
@@ -101,7 +102,7 @@ function Set-TargetResource
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
 
     $ParameterTable = @{
-            Connection = $Connection 
+            Connection = $Connection
             Name = $Name
             Identity = $Identity
             NetworkPath = $NetworkPath
@@ -116,7 +117,7 @@ function Set-TargetResource
 
     # If the resource is supposed to be present we will either add it or set it.
     if($Ensure -eq 'Present')
-    {  
+    {
         if($PIResource.Ensure -eq "Present")
         {
             $SpecifiedParameters = [System.String[]]$PSBoundParameters.Keys
@@ -131,8 +132,8 @@ function Set-TargetResource
         else
         {
             Write-Verbose $PIResource.Ensure
-            # Add the Absent Trust with the props. 
-            Write-Verbose "Adding PI Trust $($Name)"          
+            # Add the Absent Trust with the props.
+            Write-Verbose "Adding PI Trust $($Name)"
             Add-PITrust @ParameterTable
         }
     }
@@ -140,7 +141,7 @@ function Set-TargetResource
     else
     {
         Write-Verbose "Removing PI Trust $($PIResource.Name)"
-        Remove-PITrust -Connection $Connection -Name $PIResource.Name   
+        Remove-PITrust -Connection $Connection -Name $PIResource.Name
     }
 }
 
@@ -189,8 +190,9 @@ function Test-TargetResource
         $Ensure
     )
 
+    Write-Verbose "Testing PI Trust: '$Name'"
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
-    
+
     return $(Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource -Verbose:$VerbosePreference)
 }
 

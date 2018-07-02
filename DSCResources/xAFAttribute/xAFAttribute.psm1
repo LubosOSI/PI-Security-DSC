@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -64,7 +64,7 @@ param(
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$AFServer,
-        
+
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$ElementPath
@@ -78,6 +78,7 @@ return $FullPath
 function Get-TargetResource
 {
     [cmdletbinding()]
+    [OutputType([System.Collections.Hashtable])]
     param
     (
         [ValidateSet("Present", "Absent")]
@@ -86,7 +87,7 @@ function Get-TargetResource
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$AFServer,
-        
+
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$ElementPath,
@@ -169,7 +170,7 @@ function Set-TargetResource
     (
         [ValidateSet("Present", "Absent")]
         [string]$Ensure = "Present",
-        
+
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [string]$AFServer,
@@ -212,12 +213,12 @@ function Set-TargetResource
 
     $attribute = $element.Attributes | Where-Object Name -EQ $Name
 
-    if($null -eq $attribute) 
+    if($null -eq $attribute)
     # Attribute missing
     {
         Write-Verbose "Attribute '$Name' not found in Element"
         if($Ensure -eq 'Absent') { return }
-        else 
+        else
         # Need to create attribute
         {
             Write-Verbose "Creating attribute Name: '$Name' Value: $Value"
@@ -253,7 +254,7 @@ function Set-TargetResource
             $typeMatch = $attribute.Type -eq (ConvertFrom-TypeString -TypeName $Type -IsArray $IsArray)
             if(-not $typeMatch)
             {
-                Write-Verbose "Setting type to $Type$(if($IsArray){'[]'})" 
+                Write-Verbose "Setting type to $Type$(if($IsArray){'[]'})"
                 $attribute.Type = ConvertFrom-TypeString -TypeName $Type -IsArray $IsArray
             }
             if($IsArray)

@@ -19,7 +19,7 @@ function Initialize-TestEnvironment
     $dscResourcesFolderFilePath = Join-Path -Path $moduleRootFilePath -ChildPath "DSCResources"
     $dscResourceToTestFolderFilePath = Join-Path -Path $dscResourcesFolderFilePath -ChildPath $DscResourceName
     $moduleFilePath = Join-Path -Path $dscResourceToTestFolderFilePath -ChildPath "$DscResourceName.psm1"
-    
+
     Import-Module -Name $moduleFilePath -Scope 'Global' -Force
 
     $oldExecutionPolicy = Get-ExecutionPolicy
