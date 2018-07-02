@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,11 +45,11 @@ Import-Module 'PSScriptAnalyzer'
 
 $targetFileTypes = @(
                        '*.psm1',
-                       '*.ps1' 
+                       '*.ps1'
                     )
 $scriptPath = GetScriptPath
 $targetFiles = Get-ChildItem -Path (Split-Path ($scriptPath)) -Recurse -File -Include $targetFileTypes
-Write-Host "Found $($targetFiles.Count) files for analysis."
+Write-Output "Found $($targetFiles.Count) files for analysis."
 $resultsFolderName = 'Results'
 $resultsFolder = Join-Path -Path $scriptPath -ChildPath $resultsFolderName
 
@@ -59,9 +59,9 @@ if(!(Test-Path -Path $resultsFolder))
 # Define set of rules to exclude from the analysis, globally.
 $excludedRules = @( 'PSUseShouldProcessForStateChangingFunctions' )
 
-foreach ($targetFile in $targetFiles) 
+foreach ($targetFile in $targetFiles)
 {
     $resultsFile = $(Join-Path -Path $resultsFolder -ChildPath ($targetFile.Name + '.staticanalysis.dat'))
-    Write-Host "Analyzing $($targetFile.Name)"
+    Write-Output "Analyzing $($targetFile.Name)"
 	Invoke-ScriptAnalyzer -Path $targetFile.FullName -ExcludeRule $excludedRules -ErrorAction SilentlyContinue | Out-File $resultsFile -Force
 }

@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,21 +19,21 @@
 .SYNOPSIS
 
 This example configuration covers deterministic configuration items that are
-validated during the PI Security Audit Tools validation checks for the PI 
+validated during the PI Security Audit Tools validation checks for the PI
 Data Archive.
 
 .DESCRIPTION
-    
-While some validation checks are more involved, there are many which can be 
+
+While some validation checks are more involved, there are many which can be
 corrected with a simple there are many checks which cover
 
-.EXAMPLE 
+.EXAMPLE
 .\PIDataArchive_AuditBaseline -NodeName "myPI" -DaysToAllowEdit 60 -MaxQueryExecutionSeconds 300 -AutoTrustConfig 0 -PIFirewallHostmasks @('10.10.*.*','10.1.*.*') -AuthenticationPolicy 51
 
-.PARAMETER DaysToAllowEdits
+.PARAMETER DaysToAllowEdit
 
-Defines the number of days to allow edits to archive and snapshot data.  Any 
-non-zero value is accepted, though the value should be chosen to reflect the 
+Defines the number of days to allow edits to archive and snapshot data.  Any
+non-zero value is accepted, though the value should be chosen to reflect the
 practical reality of your environment.  Defaults to 365 days.
 
 .PARAMETER MaxQueryExecutionSeconds
@@ -49,13 +49,13 @@ Defaults to 0.
 
 .PARAMETER PIFirewallHostmasks
 
-The PI Firewall provides an additional layer of protection by only allowing 
+The PI Firewall provides an additional layer of protection by only allowing
 connections to the PI Data Archive from approved sources.  Defaults to non-
 routable ranges of 10.*.*.* and 192.168.*.*.
 
 .PARAMETER AuthenticationPolicy
 
-Similar to the 'Security Slider' in PI SMT, this determines the authentication 
+Similar to the 'Security Slider' in PI SMT, this determines the authentication
 protocols available to PI Data Archive clients.  Accepted values:
  3  -  block explicit login (DEFAULT)
  19 -  block PI SDK applications from using trusts
@@ -66,25 +66,25 @@ Defaults to 3.
 Configuration PIDataArchive_AuditBaseline
 {
     param(
-        [String] 
+        [String]
         $NodeName = 'localhost',
-        
-        [Int32] 
+
+        [Int32]
         $DaysToAllowEdit = 365,
-       
+
         [ValidateRange(60,300)]
-        [Int32] 
+        [Int32]
         $MaxQueryExecutionSeconds=260,
-        
+
         [ValidateSet('0','1')]
-        [Int32] 
+        [Int32]
         $AutoTrustConfig=0,
-        
-        [String[]] 
+
+        [String[]]
         $PIFirewallHostmasks = @('10.*.*.*','192.168.*.*'),
-        
+
         [ValidateSet('3','19','51')]
-        [Int32] 
+        [Int32]
         $AuthenticationPolicy='3'
          )
 
@@ -101,7 +101,7 @@ Configuration PIDataArchive_AuditBaseline
             Ensure = "Present"
             PIDataArchive = $NodeName
         }
-        
+
         # AU20002 - Restrict use of the piadmin superuser
         PIIdentity 'AU20002: piadmin usage'
         {
@@ -147,7 +147,7 @@ Configuration PIDataArchive_AuditBaseline
             Ensure = "Present"
             PIDataArchive = $NodeName
         }
-        
+
         # AU20011 - PI Firewall
         $i = 0
         foreach($Hostmask in $PIFirewallHostmasks)
@@ -156,7 +156,7 @@ Configuration PIDataArchive_AuditBaseline
             {
                 Hostmask = $Hostmask
                 Ensure = "Present"
-                Value = "Allow" 
+                Value = "Allow"
                 PIDataArchive = $NodeName
             }
             $i++
@@ -166,7 +166,7 @@ Configuration PIDataArchive_AuditBaseline
         {
             Hostmask = '*.*.*.*'
             Ensure = "Absent"
-            Value = "Allow" 
+            Value = "Allow"
             PIDataArchive = $NodeName
             DependsOn = "[PIFirewall]AU20011 - PIFirewall Add 0"
         }

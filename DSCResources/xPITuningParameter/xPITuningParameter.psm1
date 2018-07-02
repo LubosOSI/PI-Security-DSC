@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -64,16 +64,18 @@ function Set-TargetResource
         [System.String]
         $PIDataArchive = "localhost"
     )
-    
+
     $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    
+
     if($Ensure -eq 'Absent')
-    { 
-        Reset-PITuningParameter -Connection $Connection -Name $Name 
+    {
+        Write-Verbose "Resetting $Name to default value."
+        Reset-PITuningParameter -Connection $Connection -Name $Name
     }
     else
-    { 
-        Set-PITuningParameter -Connection $Connection -Name $Name -Value $Value 
+    {
+        Write-Verbose "Setting $Name to $Value."
+        Set-PITuningParameter -Connection $Connection -Name $Name -Value $Value
     }
 }
 
@@ -99,10 +101,10 @@ function Test-TargetResource
     )
 
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
-    
+
     if($PIResource.Ensure -eq 'Present' -and $Ensure -eq 'Present')
     {
-        return $($PIResource.Value -eq $Value -or ($(IsNullOrEmpty $PIResource.Value) -and $PIResource.Default -eq $Value))
+        return $($PIResource.Value -eq $Value -or (([System.String]::IsNullOrEmpty($PIResource.Value)) -and $PIResource.Default -eq $Value))
     }
     else
     {

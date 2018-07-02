@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,6 +48,7 @@ function Get-TargetResource
         throw "Could not locate AF Server '$AFServer' in known servers table"
     }
 
+    Write-Verbose "Getting AF Identity: '$Name'"
     $identity = $AF.SecurityIdentities[$Name]
 
     $Ensure = Get-PIResource_Ensure -PIResource $identity -Verbose:$VerbosePreference
@@ -109,15 +110,15 @@ function Set-TargetResource
         if($PIResource.Ensure -eq "Present")
         {
             <# Since the identity is present, we must perform due diligence to preserve settings
-            not explicitly defined in the config. Remove $PSBoundParameters and those not used 
+            not explicitly defined in the config. Remove $PSBoundParameters and those not used
             for the write operation (Ensure, AFServer). #>
             $ParametersToOmit = @('Ensure', 'AFServer') + $PSBoundParameters.Keys
             $ParametersToOmit | Foreach-Object { $null = $PIResource.Remove($_) }
 
             # Set the parameter values we want to keep to the current resource values.
             Foreach($Parameter in $PIResource.GetEnumerator())
-            { 
-                Set-Variable -Name $Parameter.Key -Value $Parameter.Value -Scope Local 
+            {
+                Set-Variable -Name $Parameter.Key -Value $Parameter.Value -Scope Local
             }
 
             Write-Verbose "Setting AF Identity '$Name'"
@@ -169,6 +170,7 @@ function Test-TargetResource
         $Description = ''
     )
 
+    Write-Verbose "Testing AF Identity: '$Name'"
     $PIResource = Get-TargetResource -Name $Name -AFServer $AFServer
 
     return (Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource)

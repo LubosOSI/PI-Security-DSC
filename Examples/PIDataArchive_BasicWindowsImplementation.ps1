@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,12 +22,12 @@ This example configuration covers a basic implementation of Windows Integrated
 Security for the PI Data Archive.
 
 .DESCRIPTION
-   
-This configuration is meant to configure a new install of a PI Data Archive to 
+
+This configuration is meant to configure a new install of a PI Data Archive to
 use the standard WIS implementation as documented in the Field Service Technical
 Standard in KB01702.
 
-.EXAMPLE 
+.EXAMPLE
 
 .\PIDataArchive_BasicWindowsImplementation -NodeName "myPI" -PIAdministratorsADGroup 'mydomain\PI Admins' -PIUsersADGroup 'mydomain\PI Users'
 
@@ -37,17 +37,17 @@ Name of the PI Data Archive server.
 
 .PARAMETER PIAdministratorsADGroup
 
-Windows identity to associate with an administrative role in PI.  Ideally, this 
+Windows identity to associate with an administrative role in PI.  Ideally, this
 should be a group.
 
 .PARAMETER PIUsersADGroup
 
-Windows identity to associate with a read only user role in PI.  Ideally, this 
+Windows identity to associate with a read only user role in PI.  Ideally, this
 should be a group.
 
 .PARAMETER PIBuffersADGroup
 
-Windows identity to associate with instances of PI Buffer Subsystem.  Ideally, this 
+Windows identity to associate with instances of PI Buffer Subsystem.  Ideally, this
 should be a group.
 
 .PARAMETER PIInterfacesADGroup
@@ -56,22 +56,22 @@ Windows identity to associate with PI Interfaces.  Ideally, this should be a gro
 
 .PARAMETER PIPointsAnalysisCreatorADGroup
 
-Windows identity to associate with a power user role in PI for those who need to 
+Windows identity to associate with a power user role in PI for those who need to
 create PI Points.  Ideally, this should be a group.
 
 .PARAMETER PIWebAppsADGroup
 
-Windows identity to associate with PI Web Applications such as PI Vision.  Ideally, 
+Windows identity to associate with PI Web Applications such as PI Vision.  Ideally,
 this should be a group.
 
 .PARAMETER PIConnectorRelaysADGroup
 
-Windows identity to associate with PI Connector Relays.  Ideally, 
+Windows identity to associate with PI Connector Relays.  Ideally,
 this should be a group.
 
 .PARAMETER PIDataCollectionManagersADGroup
 
-Windows identity to associate with PI Data Collection Managers.  Ideally, 
+Windows identity to associate with PI Data Collection Managers.  Ideally,
 this should be a group.
 
 .PARAMETER DSCIdentity
@@ -85,31 +85,31 @@ Configuration PIDataArchive_BasicWindowsImplementation
     param(
         [String]
         $NodeName = 'localhost',
-        
+
         [String]
         $PIAdministratorsADGroup = 'BUILTIN\Administrators',
-        
+
         [String]
         $PIUsersADGroup = '\Everyone',
-        
+
         [String]
         $PIBuffersADGroup = '',
-        
+
         [String]
         $PIInterfacesADGroup = '',
-        
+
         [String]
         $PIPointsAnalysisCreatorADGroup = '',
-        
+
         [String]
         $PIWebAppsADGroup = '',
-        
+
         [String]
         $PIConnectorRelaysADGroup = '',
-        
+
         [String]
         $PIDataCollectionManagersADGroup = '',
-        
+
         [String]
         $DSCIdentity = 'NT Authority\System'
 
@@ -119,7 +119,7 @@ Configuration PIDataArchive_BasicWindowsImplementation
 
     Node $NodeName
     {
-        
+
         # Create identities for basic WIS roles
         $BasicWISRoles = @(
                             @{Name='PI Buffers';Description='Identity for PI Buffer Subsystem and PI Buffer Server';},
@@ -144,7 +144,7 @@ Configuration PIDataArchive_BasicWindowsImplementation
                 Ensure = "Present"
                 PIDataArchive = $NodeName
             }
-        } 
+        }
 
         # Remove default identities
         $DefaultPIIdentities = @(
@@ -153,7 +153,7 @@ Configuration PIDataArchive_BasicWindowsImplementation
                                     'PIEngineers',
                                     'pidemo'
                                 )
-        
+
         Foreach($DefaultPIIdentity in $DefaultPIIdentities)
         {
             PIIdentity "DisableDefaultIdentity_$DefaultPIIdentity"
@@ -169,7 +169,7 @@ Configuration PIDataArchive_BasicWindowsImplementation
                                     'PIWorld',
                                     'piusers'
                                 )
-        
+
         Foreach($DefaultPIIdentity in $DefaultPIIdentities)
         {
             PIIdentity "DisableDefaultIdentity_$DefaultPIIdentity"
@@ -181,10 +181,10 @@ Configuration PIDataArchive_BasicWindowsImplementation
                 PIDataArchive = $NodeName
             }
         }
-        
-        # Set PI Mappings 
+
+        # Set PI Mappings
         $DesiredMappings = @(
-                                
+
                                 @{Name=$PIAdministratorsADGroup;Identity='piadmins'},
                                 @{Name=$PIBuffersADGroup;Identity='PI Buffers'},
                                 @{Name=$PIInterfacesADGroup;Identity='PI Interfaces'},
@@ -211,18 +211,18 @@ Configuration PIDataArchive_BasicWindowsImplementation
                 }
             }
         }
-        
+
         # Set PI Database Security Rules
         $DatabaseSecurityRules = @(
                                     @{Name='PIAFLINK';Security='piadmins: A(r,w)'},
                                     @{Name='PIARCADMIN';Security='piadmins: A(r,w)'},
                                     @{Name='PIARCDATA';Security='piadmins: A(r,w)'},
                                     @{Name='PIAUDIT';Security='piadmins: A(r,w)'},
-                                    @{Name='PIBACKUP';Security='piadmins: A(r,w)'}, 
+                                    @{Name='PIBACKUP';Security='piadmins: A(r,w)'},
                                     @{Name='PIBatch';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Users: A(r)'},
                                     # PIBACTHLEGACY applies to the old batch subsystem which predates the PI Batch Database.
                                     # Unless the pibatch service is running, and there is a need to keep it running, this
-                                    # entry can be safely ignored. 
+                                    # entry can be safely ignored.
                                     # @{Name='PIBATCHLEGACY';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Users: A(r)'},
                                     @{Name='PICampaign';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Users: A(r)'},
                                     @{Name='PIDBSEC';Security='piadmins: A(r,w) | PIWorld: A(r) | PI Data Collection Managers: A(r) | PI Users: A(r) | PI Web Apps: A(r)'},
@@ -249,7 +249,7 @@ Configuration PIDataArchive_BasicWindowsImplementation
                 PIDataArchive = $NodeName
             }
         }
-        
+
         # Define security for default points
         $DefaultPIPoints = @(
                             'SINUSOID','SINUSOIDU','CDT158','CDM158','CDEP158',
