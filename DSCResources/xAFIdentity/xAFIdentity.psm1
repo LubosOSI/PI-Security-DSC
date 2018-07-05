@@ -33,20 +33,7 @@ function Get-TargetResource
         $Name
     )
 
-    # Load AF SDK. Calling this while it's already loaded shouldn't be harmful
-    $loaded = [System.Reflection.Assembly]::LoadWithPartialName("OSIsoft.AFSDK")
-    if ($null -eq $loaded) {
-        $ErrorActionPreference = 'Stop'
-        throw "AF SDK could not be loaded"
-    }
-
-    $piSystems = New-Object OSIsoft.AF.PISystems
-    $AF = $piSystems | Where-Object Name -EQ $AFServer
-    if($null -eq $AF)
-    {
-        $ErrorActionPreference = 'Stop'
-        throw "Could not locate AF Server '$AFServer' in known servers table"
-    }
+    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
 
     Write-Verbose "Getting AF Identity: '$Name'"
     $identity = $AF.SecurityIdentities[$Name]
@@ -88,20 +75,7 @@ function Set-TargetResource
         $Description = ''
     )
 
-    # Load AF SDK. Calling this while it's already loaded shouldn't be harmful
-    $loaded = [System.Reflection.Assembly]::LoadWithPartialName("OSIsoft.AFSDK")
-    if ($null -eq $loaded) {
-        $ErrorActionPreference = 'Stop'
-        throw "AF SDK could not be loaded"
-    }
-
-    $piSystems = New-Object OSIsoft.AF.PISystems
-    $AF = $piSystems | Where-Object Name -EQ $AFServer
-    if($null -eq $AF)
-    {
-        $ErrorActionPreference = 'Stop'
-        throw "Could not locate AF Server '$AFServer' in known servers table"
-    }
+    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
 
     $PIResource = Get-TargetResource -Name $Name -AFServer $AFServer
 
