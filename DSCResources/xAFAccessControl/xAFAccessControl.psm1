@@ -38,21 +38,27 @@ function Get-TargetResource
         $Path,
 
         [ValidateSet('Allow','Deny')]
-        [parameter(Mandatory = $true)]
+        [parameter(Mandatory = $false)]
         [System.String]
-        $Action,
+        $Action='Allow',
 
         [parameter(Mandatory = $true)]
         [System.String]
         $Identity
     )
-
-    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
     
     $AFSecurityObject = Get-AFSecurityObject -Type $Type -Path $Path -AFServer $AFServer
-
-    $Access = $AFSecurityObject.GetSecurityEntries() | Where-Object { $_.Name -eq $Identity } | Select-Object -ExpandProperty Rights
+    switch($Action)
+    {
+        'Deny'  { $AllowAccess = $false; break }
+        'Allow' { $AllowAccess = $true; break }
+    }
     
+    $AFSecurityObjectEntries = Get-AFSecurityObjectEntries $AFSecurityObject
+    if($null -ne $AFSecurityObjectEntries)
+    {
+        $Access = $AFSecurityObjectEntries | Where-Object { $_.Identity.Name -eq $Identity -and $_.AllowAccess -eq $AllowAccess } | Select-Object -ExpandProperty Rights
+    }
     if([System.String]::IsNullOrEmpty($Access))
     {
         $Access = "None"
@@ -71,6 +77,7 @@ function Get-TargetResource
         Path = $Path
         Identity = $Identity
         Access = $Access
+        Action = $Action
     }
 
     $returnValue
@@ -125,7 +132,7 @@ function Set-TargetResource
         if($Ensure -eq "Absent")
         {
             Write-Verbose "Removing access for $Identity"
-            [OSIsoft.AF.AFSecurity]::RemoveIdentity($PISystem, $AFSecurityIdentity, $TargetItems, $ApplyToChildren)
+            Remove-AFIdentityAccess $PISystem $AFSecurityIdentity $TargetItems $ApplyToChildren
         }
         else
         {
@@ -144,7 +151,7 @@ function Set-TargetResource
                 $RightsToAllow = [OSIsoft.AF.AFSecurityRights]::None
                 $RightsToDeny = $SpecifiedRights
             }
-            [OSIsoft.AF.AFSecurity]::AddIdentity($PISystem, $AFSecurityIdentity, $TargetItems, $RightsToAllow, $RightsToDeny, $Operation, $ApplyToChildren)
+            Add-AFIdentityAccess $PISystem $AFSecurityIdentity $TargetItems $RightsToAllow $RightsToDeny $Operation $ApplyToChildren
         }
     }
 }
@@ -189,7 +196,23 @@ function Test-TargetResource
     $CurrentAccess = ConvertTo-CanonicalAFSecurityRight $PIResource.Access
     $DesiredAccess = ConvertTo-CanonicalAFSecurityRight $Access
     
-    return $CurrentAccess -eq $DesiredAccess -and $PIResource.Ensure -eq $Ensure
+    $FullRightsValues = @(1023, 65535)
+    $IsEnsured = $PIResource.Ensure -eq $Ensure
+    $IsEquivalentAccess = $CurrentAccess -eq $DesiredAccess -or ($DesiredAccess.value__ -in $FullRightsValues -and $CurrentAccess.value__ -in $FullRightsValues)
+
+    return $IsEnsured -and $IsEquivalentAccess
+}
+
+function Add-AFIdentityAccess
+{
+    param($PISystem, $AFSecurityIdentity, $TargetItems, $RightsToAllow, $RightsToDeny, $Operation, $ApplyToChildren)
+    [OSIsoft.AF.AFSecurity]::AddIdentity($PISystem, $AFSecurityIdentity, $TargetItems, $RightsToAllow, $RightsToDeny, $Operation, $ApplyToChildren)
+}
+
+function Remove-AFIdentityAccess
+{
+    param($PISystem, $AFSecurityIdentity, $TargetItems, $ApplyToChildren)
+    [OSIsoft.AF.AFSecurity]::RemoveIdentity($PISystem, $AFSecurityIdentity, $TargetItems, $ApplyToChildren)
 }
 
 function Get-AFSecurityObject
@@ -243,6 +266,16 @@ function Get-AFSecurityObject
     }
 
     return $AFSecurityObject
+}
+
+function Get-AFSecurityObjectEntries
+{
+    param(
+        [System.Object] $AFSecurityObject
+    )
+
+    $AFSecurityEntries = $AFSecurityObject.GetSecurityEntries()
+    return $AFSecurityEntries
 }
 
 function ConvertTo-CanonicalAFSecurityItem
@@ -307,7 +340,7 @@ function ConvertTo-CanonicalAFSecurityItem
 function ConvertTo-CanonicalAFSecurityRight
 {
     param(
-            [Parameter(Mandatory)]
+            [Parameter(Mandatory=$false)]
             [string]
             $Access
          )
@@ -338,21 +371,35 @@ function ConvertTo-CanonicalAFSecurityRight
     {
         $AFSecurityRightArray = @()
         $AFSecurityRightArray = $Access.Split(',').Trim()
-        $CanonicalAFSecurityRight = [OSIsoft.AF.AFSecurityRights]::None
+        $CanonicalStringArray = @()
         foreach($AFSecurityRight in $AFSecurityRightArray)
         {
             if($AFSecurityRight -in [System.Enum]::GetNames([OSIsoft.AF.AFSecurityRights]))
             {
-                $CanonicalAFSecurityRight += [OSIsoft.AF.AFSecurityRights]::$AFSecurityRight
+                $CanonicalStringArray += $AFSecurityRight
             }
             elseif($AFSecurityRightMapping.ContainsKey($AFSecurityRight))
             {
-                $CanonicalAFSecurityRight += [OSIsoft.AF.AFSecurityRights]::($AFSecurityRightMapping[$AFSecurityRight])
+                $CanonicalStringArray += $AFSecurityRightMapping[$AFSecurityRight]
             }
             else
             {
                 throw "Invalid AFSecurityRight specified: $AFSecurityRight"
             }
+        }
+
+        $IsReadWriteConflict = ($CanonicalString -contains "Read" -or $CanonicalString -contains "Write") -and $CanonicalString -contains "ReadWrite"
+        $IsReadWriteDataConflict = ($CanonicalString -contains "ReadData" -or $CanonicalString -contains "WriteData") -and $CanonicalString -contains "ReadWriteData"
+        
+        if($IsReadWriteConflict -or $IsReadWriteDataConflict)
+        {
+            throw "Conflict identified. Redundant rights specified."
+        }
+
+        $CanonicalAFSecurityRight = [OSIsoft.AF.AFSecurityRights]::None
+        foreach($CanonicalString in $CanonicalStringArray)
+        {
+            $CanonicalAFSecurityRight += [OSIsoft.AF.AFSecurityRights]::$CanonicalString
         }
     }
 
