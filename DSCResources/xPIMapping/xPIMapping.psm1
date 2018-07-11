@@ -92,7 +92,7 @@ function Set-TargetResource
         if($PIResource.Ensure -eq "Present")
         {
             # Rename if necessary
-            if(!$(IsNullOrEmpty $Name) -and $Name -ne $PIResource.Name)
+            if(![System.String]::IsNullOrEmpty($Name) -and $Name -ne $PIResource.Name)
             {
                 Write-Verbose "Renaming PI Mapping $($PIResource.Name) to $($Name)"
                 Rename-PIMapping -Connection $Connection -ExistingName $PIResource.Name -NewName $Name
@@ -116,7 +116,7 @@ function Set-TargetResource
         }
         else
         {
-            if($(IsNullOrEmpty $Name))
+            if([System.String]::IsNullOrEmpty($Name))
             {
                 $Name = $PrincipalName
             }

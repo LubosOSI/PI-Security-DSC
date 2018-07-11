@@ -52,7 +52,12 @@ param(
 
 		[parameter(Mandatory = $false)]
 		[String[]]
-		$TagList = @()
+		$TagList = @(),
+
+        [ValidateSet('Unit','Integration','All')]
+        [parameter(Mandatory = $false)]
+		[String]
+		$TestType = 'All'
 )
 
 #endregion
@@ -90,6 +95,7 @@ try
 	# Define paths.
 	$rootFolder = GetScriptPath
     $unitTestFolder = Join-Path -Path $rootFolder -ChildPath 'Unit'
+    $integrationTestFolder = Join-Path -Path $rootFolder -ChildPath 'Integration'
 
 	# Import the Pester module.
 	try
@@ -121,7 +127,14 @@ try
 	Write-Output $msg
 
 	# https://github.com/pester/Pester/wiki/Invoke-Pester
-	Invoke-Pester -Script $($unitTestFolder + '\*.tests.ps1') -Tag $TagList -TestName $TestNameFilter
+    if($TestType -in @('Unit','All'))
+    {
+	    Invoke-Pester -Script $($unitTestFolder + '\*.tests.ps1') -Tag $TagList -TestName $TestNameFilter
+    }
+    if($TestType -in @('Integration','All'))
+    {
+        Invoke-Pester -Script $($integrationTestFolder + '\*.tests.ps1') -Tag $TagList -TestName $TestNameFilter
+    }
 }
 catch
 { Throw }

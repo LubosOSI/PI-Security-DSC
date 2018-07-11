@@ -146,14 +146,56 @@ function Set-PIResourceParametersPreserved
     return $ParameterTable
 }
 
-function IsNullOrEmpty
+function Connect-AFServerUsingSDK
 {
-param(
-    [Object]
-    $Value
-)
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$AFServer
+    )
 
-    return $($null -eq $Value -or "" -eq $Value)
+    $loaded = [System.Reflection.Assembly]::LoadWithPartialName("OSIsoft.AFSDK")
+    if ($null -eq $loaded) {
+        $ErrorActionPreference = 'Stop'
+        throw "AF SDK could not be loaded"
+    }
+
+    $piSystems = New-Object OSIsoft.AF.PISystems
+    if($piSystems.Contains($AFServer))
+    {
+        $AF = $piSystems[$AFServer]
+    }
+    else
+    {
+        $ErrorActionPreference = 'Stop'
+        throw "Could not locate AF Server '$AFServer' in known servers table"
+    }
+
+    return $AF
 }
 
-Export-ModuleMember -Function @( 'Get-PIResource_Ensure', 'Compare-PIDataArchiveACL', 'Compare-PIResourceGenericProperties', 'Set-PIResourceParametersPreserved', 'IsNullOrEmpty' )
+function ConvertTo-FullAFPath
+{
+    param(
+            [Parameter(Mandatory)]
+            [ValidateNotNullOrEmpty()]
+            [string]$AFServer,
+
+            [Parameter(Mandatory)]
+            [ValidateNotNullOrEmpty()]
+            [string]$ElementPath
+    )
+
+    $FullPath = "\\" + $AFServer.Trim("\") + "\" + $ElementPath.Trim("\")
+
+    return $FullPath
+}
+
+Export-ModuleMember -Function @(
+                                    'Get-PIResource_Ensure',
+                                    'Compare-PIDataArchiveACL',
+                                    'Compare-PIResourceGenericProperties',
+                                    'Set-PIResourceParametersPreserved',
+                                    'Connect-AFServerUsingSDK',
+                                    'ConvertTo-FullAFPath'
+                                )
