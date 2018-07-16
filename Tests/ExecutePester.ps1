@@ -125,18 +125,23 @@ try
 	else
 	{ $msg = 'Execute tests matching theses tags: {0} and found with *.tests.ps1 extension' -f ($TagList -Join ', ')}
 	Write-Output $msg
-
+    
+    $scriptsToRun = @()
 	# https://github.com/pester/Pester/wiki/Invoke-Pester
     if($TestType -in @('Unit','All'))
     {
-	    Invoke-Pester -Script $($unitTestFolder + '\*.tests.ps1') -Tag $TagList -TestName $TestNameFilter
+	    $scriptsToRun += gci $unitTestFolder -file -Include '*.tests.ps1' -Recurse | Select -ExpandProperty FullName
     }
     if($TestType -in @('Integration','All'))
     {
-        Invoke-Pester -Script $($integrationTestFolder + '\*.tests.ps1') -Tag $TagList -TestName $TestNameFilter
+        $scriptsToRun += gci $integrationTestFolder -file -Include '*.tests.ps1' -Recurse | Select -ExpandProperty FullName
     }
+    
+    $scriptsToRun | % { Invoke-Pester -Script $_ -Tag $TagList -TestName $TestNameFilter }
 }
 catch
 { Throw }
+
+
 
 #endregion

@@ -33,10 +33,8 @@ function Get-TargetResource
         $Name
     )
 
-    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
-
     Write-Verbose "Getting AF Identity: '$Name'"
-    $identity = $AF.SecurityIdentities[$Name]
+    $identity = Get-AFIdentityDSC -AFServer $AFServer -Name $Name
 
     $Ensure = Get-PIResource_Ensure -PIResource $identity -Verbose:$VerbosePreference
 
@@ -75,8 +73,6 @@ function Set-TargetResource
         $Description = ''
     )
 
-    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
-
     $PIResource = Get-TargetResource -Name $Name -AFServer $AFServer
 
     if($Ensure -eq "Present")
@@ -96,26 +92,18 @@ function Set-TargetResource
             }
 
             Write-Verbose "Setting AF Identity '$Name'"
-            $identity = $AF.SecurityIdentities[$Name]
-            $identity.Description = $Description
-            $identity.IsEnabled = $IsEnabled
-            $identity.CheckIn()
+            Set-AFIdentityDSC -AFServer $AFServer -Name $Name -Description $Description -IsEnabled $IsEnabled
         }
         else
         {
             Write-Verbose "Adding AF Identity '$Name'"
-            $identity = $AF.SecurityIdentities.Add($Name)
-            $identity.Description = $Description
-            $identity.IsEnabled = $IsEnabled
-            $identity.CheckIn()
+            Add-AFIdentityDSC -AFServer $AFServer -Name $Name -Description $Description -IsEnabled $IsEnabled
         }
     }
     else
     {
         Write-Verbose "Removing AF Identity '$Name'"
-        $identity = $AF.SecurityIdentities[$Name]
-        $AF.SecurityIdentities.Remove($identity) | Out-Null
-        $identity.CheckIn()
+        Remove-AFIdentityDSC -AFServer $AFServer -Name $Name -Description $Description -IsEnabled $IsEnabled
     }
 }
 
@@ -148,6 +136,80 @@ function Test-TargetResource
     $PIResource = Get-TargetResource -Name $Name -AFServer $AFServer
 
     return (Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource)
+}
+
+function Set-AFIdentityDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $AFServer,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Description,
+        
+        [System.String]
+        $IsEnabled
+    )
+
+    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
+    $identity = $AF.SecurityIdentities[$Name]
+    $identity.Description = $Description
+    $identity.IsEnabled = $IsEnabled
+    $identity.CheckIn()
+}
+
+function Add-AFIdentityDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $AFServer,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Description,
+        
+        [System.String]
+        $IsEnabled
+    )
+
+    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
+    $identity = $AF.SecurityIdentities.Add($Name)
+    $identity.Description = $Description
+    $identity.IsEnabled = $IsEnabled
+    $identity.CheckIn()
+}
+
+function Remove-AFIdentityDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $AFServer,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Description,
+        
+        [System.String]
+        $IsEnabled
+    )
+
+    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
+    $identity = $AF.SecurityIdentities[$Name]
+    $AF.SecurityIdentities.Remove($identity) | Out-Null
+    $identity.CheckIn()
 }
 
 Export-ModuleMember -Function *-TargetResource

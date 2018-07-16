@@ -32,8 +32,8 @@ function Get-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PITuningParameter -Connection $Connection -Name $Name
+    Write-Verbose "Getting PITuningParameter: '$Name'"
+    $PIResource = Get-PITuningParameterDSC -PIDataArchive $PIDataArchive -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -65,17 +65,15 @@ function Set-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-
     if($Ensure -eq 'Absent')
     {
-        Write-Verbose "Resetting $Name to default value."
-        Reset-PITuningParameter -Connection $Connection -Name $Name
+        Write-Verbose "Resetting PITuningParameter: '$Name' to default value."
+        Reset-PITuningParameterDSC -PIDataArchive $PIDataArchive -Name $Name
     }
     else
     {
-        Write-Verbose "Setting $Name to $Value."
-        Set-PITuningParameter -Connection $Connection -Name $Name -Value $Value
+        Write-Verbose "Setting PITuningParameter '$Name' to $Value."
+        Set-PITuningParameterDSC -PIDataArchive $PIDataArchive -Name $Name -Value $Value
     }
 }
 
@@ -100,6 +98,7 @@ function Test-TargetResource
         $PIDataArchive = "localhost"
     )
 
+    Write-Verbose "Testing PITuningParameter: '$Name'"
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
 
     if($PIResource.Ensure -eq 'Present' -and $Ensure -eq 'Present')
@@ -110,6 +109,55 @@ function Test-TargetResource
     {
         return $($PIResource.Ensure -eq 'Absent' -and $Ensure -eq 'Absent')
     }
+}
+
+function Get-PITuningParameterDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PITuningParameter -Connection $Connection -Name $Name
+    return $PIResource
+}
+
+function Set-PITuningParameterDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Value,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PITuningParameter -Connection $Connection -Name $Name -Value $Value
+}
+
+function Reset-PITuningParameterDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Reset-PITuningParameter -Connection $Connection -Name $Name
 }
 
 Export-ModuleMember -Function *-TargetResource

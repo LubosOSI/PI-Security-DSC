@@ -41,7 +41,7 @@ function Get-TargetResource
     )
 
     $Access = $null
-    $AccessControlList = Get-PIDataArchiveACL -PIDataArchive $PIDataArchive -Name $Name -Type $Type -Format Hashtable -Verbose:$VerbosePreference
+    $AccessControlList = Get-PIAccessControl -PIDataArchive $PIDataArchive -Name $Name -Type $Type -Verbose:$VerbosePreference
 
     if($AccessControlList.ContainsKey($Identity))
     {
@@ -86,7 +86,6 @@ function Set-TargetResource
         [System.String]
         $Identity,
 
-        [parameter(Mandatory = $true)]
         [System.String]
         $Access,
 
@@ -98,12 +97,12 @@ function Set-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Access = NormalizeAccessString -Access $Access
+    $Access = ConverTo-CanonicalAccessString -Access $Access
 
     if(!$(Test-TargetResource -Name $Name -Identity $Identity -Type $Type -Access $Access -Ensure $Ensure -PIDataArchive $PIDataArchive))
     {
         # Get a Hashtable of full ACL.
-        $AccessControlList = Get-PIDataArchiveACL -PIDataArchive $PIDataArchive -Name $Name -Type $Type -Format Hashtable -Verbose:$VerbosePreference
+        $AccessControlList = Get-PIAccessControl -PIDataArchive $PIDataArchive -Name $Name -Type $Type -Verbose:$VerbosePreference
 
         # Add or edit the entry for the identity
         if($AccessControlList.ContainsKey($Identity))
@@ -118,7 +117,7 @@ function Set-TargetResource
         }
 
         # Write the full updated ACL.
-        Set-PIDataArchiveACL -PIDataArchive $PIDataArchive -Name $Name -Type $Type -AccessControlList $AccessControlList -Verbose:$VerbosePreference
+        Set-PIAccessControl -PIDataArchive $PIDataArchive -Name $Name -Type $Type -AccessControlList $AccessControlList -Verbose:$VerbosePreference
     }
 }
 
@@ -140,7 +139,6 @@ function Test-TargetResource
         [System.String]
         $Identity,
 
-        [parameter(Mandatory = $true)]
         [System.String]
         $Access,
 
@@ -152,12 +150,12 @@ function Test-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Access = NormalizeAccessString -Access $Access
+    $Access = ConverTo-CanonicalAccessString -Access $Access
 
     [System.Boolean]$result = $false
     $PIResource = Get-TargetResource -Name $Name -Type $Type -Identity $Identity -PIDataArchive $PIDataArchive
 
-    if($PIResource.Ensure -eq $Ensure -and $PIResource.Access -eq $Access)
+    if($PIResource.Ensure -eq $Ensure -and ($PIResource.Access -eq $Access -or ([System.String]::IsNullOrEmpty($PIResource.Access) -and [System.String]::IsNullOrEmpty($Access))))
     {
         $result = $true
     }
@@ -166,26 +164,40 @@ function Test-TargetResource
     return $result
 }
 
-function NormalizeAccessString
+function ConverTo-CanonicalAccessString
 {
     param(
-        [parameter(Mandatory=$true)]
         [string]
         $Access
     )
+    $Access = $Access.ToLower()
+    $AccessMapping = @{
+        "read, write" = "Read, Write"
+        "read,write"  = "Read, Write"
+        "readwrite"   = "Read, Write"
+        "read"        = "Read"
+        "write"       = "Write"
+        "r"           = "Read"
+        "w"           = "Write"
+        "rw"          = "Read, Write"
+        "r,w"         = "Read, Write"
+        "r, w"        = "Read, Write"
+        ""            = ""
+    }
 
-    switch($Access)
+    if($AccessMapping.Contains($Access))
     {
-        "Read,Write" { $Access = "Read, Write"; break }
-        "r,w" { $Access = "Read, Write"; break }
-        "r"          { $Access = "Read"; break }
-        "w"          { $Access = "Write"; break }
+        $Access = $AccessMapping[$Access]
+    }
+    else
+    {
+        throw "Invalid Access string '$Access' specified."
     }
 
     return $Access
 }
 
-function ConvertTo-PIDataArchiveACLHashtable
+function ConvertTo-PIAccessControlHashtable
 {
     [CmdletBinding()]
     [OutputType([System.Collections.HashTable])]
@@ -204,10 +216,11 @@ function ConvertTo-PIDataArchiveACLHashtable
         $Identity = $splitEntry[0]
         switch($splitEntry[1])
 	    {
-            "A(r)"   { $Access = "Read" }
-            "A(w)"   { $Access = "Write" }
-            "A(r,w)" { $Access = "Read, Write" }
-            "A()"    { $Access = ""}
+            "A(r)"   { $Access = "Read"; break }
+            "A(w)"   { $Access = "Write"; break }
+            "A(r,w)" { $Access = "Read, Write"; break }
+            "A()"    { $Access = ""; break }
+            default  { throw "Invalid entry '$($splitEntry[1])' specified."}
         }
         $hashtableACL.Add($Identity, $Access)
     }
@@ -215,7 +228,7 @@ function ConvertTo-PIDataArchiveACLHashtable
     return $hashtableACL
 }
 
-function ConvertTo-PIDataArchiveACLString
+function ConvertTo-PIAccessControlString
 {
     [CmdletBinding()]
     param(
@@ -235,21 +248,22 @@ function ConvertTo-PIDataArchiveACLString
     {
         switch($Hashtable[$key])
         {
-            "Read"        { $Access = "A(r)" }
-            "Write"       { $Access = "A(w)" }
-            "Read, Write" { $Access = "A(r,w)" }
-            ""            { $Access = "A()" }
+            "Read"        { $Access = "A(r)"; break }
+            "Write"       { $Access = "A(w)"; break }
+            "Read, Write" { $Access = "A(r,w)"; break }
+            ""            { $Access = "A()"; break }
+            default       { throw "Invalid access string '$($Hashtable[$key])' specified."}
         }
         $stringACL += $space + $key + $identityDelimiter + $space + $Access + $space + $entryDelimiter
     }
-    $stringACL = $stringACL.TrimEnd($entryDelimiter).TrimStart($space)
+    $stringACL = $stringACL.TrimEnd($entryDelimiter).Trim($space)
 
     Write-Verbose "Converted security String: $stringACL"
 
     return $stringACL
 }
 
-function Get-PIDataArchiveACL
+function Get-PIAccessControl
 {
     [CmdletBinding()]
     param(
@@ -261,36 +275,28 @@ function Get-PIDataArchiveACL
         $Name,
         [parameter(Mandatory=$true)]
         [System.String]
-        $Type,
-        [parameter(Mandatory=$false)]
-        [ValidateSet('String','Hashtable')]
-        [System.String]
-        $Format='HashTable'
+        $Type
     )
 
     [System.Collections.Hashtable]$AccessControlList = @{}
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
 
     Write-Verbose "Getting security on $Type\$Name as $Format"
     if ($Type -eq "PIDatabaseSecurity")
 	{
-        $Security = $(Get-PIDatabasesecurity -Connection $Connection -Name $Name).Security.ToString()
+        $Security = Get-PIDatabasesecurityDSC -PIDataArchive $PIDataArchive -Name $Name
     }
 	else
 	{
-        $Security = $(Get-PIPoint -Connection $Connection -Name $Name -Attributes $Type | Select-Object -ExpandProperty Attributes)[$Type.ToLower()]
+        $Security = Get-PIPointDSC -PIDataArchive $PIDataArchive -Name $Name -Type $Type
 	}
-    Write-Verbose "Security on $Type\$Name returned: $Security"
 
-    if($Format -eq 'Hashtable')
-    {
-        $AccessControlList = ConvertTo-PIDataArchiveACLHashtable -String $Security
-    }
+    Write-Verbose "Security on $Type\$Name returned: $Security"
+    $AccessControlList = ConvertTo-PIAccessControlHashtable -String $Security
 
     return $AccessControlList
 }
 
-function Set-PIDataArchiveACL
+function Set-PIAccessControl
 {
     [CmdletBinding()]
     param(
@@ -308,19 +314,87 @@ function Set-PIDataArchiveACL
         $AccessControlList
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-
-    [System.String]$Security = ConvertTo-PIDataArchiveACLString -Hashtable $AccessControlList
+    [System.String]$Security = ConvertTo-PIAccessControlString -Hashtable $AccessControlList
 
     Write-Verbose "Setting security on $Type\$Name to: $Security"
     if($Type -eq "PIDatabaseSecurity")
     {
-        Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security -Verbose:$VerbosePreference
+        Set-PIDatabaseSecurityDSC -PIDataArchive $PIDataArchive -Name $Name -Security $Security -Verbose:$VerbosePreference
     }
     else
     {
-        Set-PIPoint -Connection $Connection -Name $Name -Attributes @{ $Type.ToLower()=$Security } -Verbose:$VerbosePreference
+        Set-PIPointDSC -PIDataArchive $PIDataArchive -Name $Name -Type $Type -Security $Security -Verbose:$VerbosePreference
     }
+}
+
+function Get-PIDatabaseSecurityDSC
+{
+    param(
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $PIDataArchive,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Name
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = $(Get-PIDatabasesecurity -Connection $Connection -Name $Name).Security.ToString()
+    return $PIResource
+}
+
+function Get-PIPointDSC
+{
+    param(
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $PIDataArchive,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Name,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Type
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = $(Get-PIPoint -Connection $Connection -Name $Name -Attributes $Type | Select-Object -ExpandProperty Attributes)[$Type.ToLower()]
+    return $PIResource
+}
+
+function Set-PIDatabaseSecurityDSC
+{
+    param(
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $PIDataArchive,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Name,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Security
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security -Verbose:$VerbosePreference
+}
+
+function Set-PIPointDSC
+{
+    param(
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $PIDataArchive,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Name,
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Type,
+        [parameter(Mandatory=$false)]
+        [System.String]
+        $Security
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PIPoint -Connection $Connection -Name $Name -Attributes @{ $Type.ToLower()=$Security } -Verbose:$VerbosePreference
 }
 
 Export-ModuleMember -Function *-TargetResource
