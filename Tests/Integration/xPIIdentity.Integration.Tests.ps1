@@ -2,7 +2,7 @@
 
 # Modules to test.
 $script:DSCModuleName = 'PISecurityDSC'
-$script:DSCResourceName = 'xAFAccessControl'
+$script:DSCResourceName = 'xPIIdentity'
 $IsVerbose = $false
 # Import Helper.
 $script:moduleRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -26,6 +26,7 @@ function Invoke-TestCleanup
 # Begin Testing
 try
 {
+    
     Invoke-TestSetup
     $resultsFolder = Join-Path -Path (Split-Path -Path $PSScriptRoot) -ChildPath "Results"
     $startDscConfigurationParameters = @{
@@ -40,20 +41,23 @@ try
     . $configFile
 
     Describe "$script:DSCResourceName\Integration" {
-        
+        $IsVerbose = $false
         $configurationName = "$($script:DSCResourceName)_Set"
          
-            Context "When using configuration $($configurationName)" {
-                $OutputPath = Join-Path -Path $resultsFolder -ChildPath $configurationName
+            Context "When using configuration $($configurationName) to set initial values" {
+                $OutputPath = Join-Path -Path $resultsFolder -ChildPath $configurationName                
                 $configurationParameters = @{
-                            Access            = "Read, ReadData"
+                            CanDelete         = $true
+                            AllowUseInTrusts  = $true
+                            Description       = "Inital description"
+                            IsEnabled         = $true
                             OutputPath        = $OutputPath
                             ConfigurationData = $ConfigurationData
-                }
+                        }
+
                 It 'Should compile and apply the MOF without throwing' {
                     {
                         & $configurationName @configurationParameters
-
                         $startDscConfigurationParameters["Path"] = $OutputPath
                         Start-DscConfiguration @startDscConfigurationParameters
                     } | Should -Not -Throw
@@ -63,32 +67,73 @@ try
                     { $script:currentConfiguration = Get-DscConfiguration -Verbose:$IsVerbose -ErrorAction Stop } | Should -Not -Throw
                 }
 
-                It 'Should set the resource with all the correct parameters' {
-                    $resourceCurrentState = $script:currentConfiguration | Where-Object { 
+                $resourceCurrentState = $script:currentConfiguration | Where-Object { 
                         $_.ConfigurationName -eq $configurationName -and $_.CimClassName -eq $script:DSCResourceName 
-                    }
-                    foreach($resource in $resourceCurrentState)
+                }
+                foreach($resource in $resourceCurrentState)
+                {
+                    foreach($configurationParameter in $configurationParameters.GetEnumerator())
                     {
-                        $resource.Access | Should -Match $configurationParameters.Access
-                        $resource.Ensure | Should -Be "Present"
+                        if($configurationParameter.Key -notin @('OutputPath','ConfigurationData')){
+                            It "Should set the correct value for $($configurationParameter.Key) on $($resource.ResourceId)" {
+                                $resource.($configurationParameter.Key) | Should -Match $configurationParameter.Value
+                            }
+                        }
                     }
                 }
+            }
+
+            Context "When using configuration $($configurationName) to set updated values" {
+                $OutputPath = Join-Path -Path $resultsFolder -ChildPath $configurationName 
+                $configurationParameters = @{
+                            CanDelete         = $true
+                            AllowUseInTrusts  = $true
+                            Description       = "Updated description"
+                            IsEnabled         = $false
+                            OutputPath        = $OutputPath
+                            ConfigurationData = $ConfigurationData
+                        }    
+                It 'Should compile and apply the MOF without throwing' {
+                    {
+                        & $configurationName @configurationParameters
+                        $startDscConfigurationParameters["Path"] = $OutputPath
+                        Start-DscConfiguration @startDscConfigurationParameters
+                    } | Should -Not -Throw
+                }
+
+                It 'Should call Get-DscConfiguration without error' {
+                    { $script:currentConfiguration = Get-DscConfiguration -Verbose:$IsVerbose -ErrorAction Stop } | Should -Not -Throw
+                }
+
+                
+                $resourceCurrentState = $script:currentConfiguration | Where-Object { 
+                        $_.ConfigurationName -eq $configurationName -and $_.CimClassName -eq $script:DSCResourceName 
+                }
+                foreach($resource in $resourceCurrentState)
+                {
+                    foreach($configurationParameter in $configurationParameters.GetEnumerator())
+                    {
+                        if($configurationParameter.Key -notin @('OutputPath','ConfigurationData')){
+                            It "Should set the correct value for $($configurationParameter.Key) on $($resource.ResourceId)" {
+                                $resource.($configurationParameter.Key) | Should -Match $configurationParameter.Value
+                            }
+                        }
+                    }
+                }
+                
             }
         
         $configurationName = "$($script:DSCResourceName)_Remove"
             
-        Context "When using configuration $($configurationName)" {
-            $OutputPath = Join-Path -Path $resultsFolder -ChildPath $configurationName
+        Context "When using configuration $($configurationName) to remove the value" {
+            $OutputPath = Join-Path -Path $resultsFolder -ChildPath $configurationName 
             $configurationParameters = @{
                         OutputPath        = $OutputPath
                         ConfigurationData = $ConfigurationData
             }    
             It 'Should compile and apply the MOF without throwing' {
                 {
-                    
-
                     & $configurationName @configurationParameters
-
                     $startDscConfigurationParameters["Path"] = $OutputPath
                     Start-DscConfiguration @startDscConfigurationParameters
                 } | Should -Not -Throw
@@ -112,17 +157,5 @@ try
 }
 finally
 {
-    $configurationName = "$($script:DSCResourceName)_CleanUp"
-    $OutputPath = Join-Path -Path $resultsFolder -ChildPath $configurationName 
-    $configurationParameters = @{
-                        OutputPath        = $OutputPath
-                        ConfigurationData = $ConfigurationData
-    }
-
-    & $configurationName @configurationParameters
-
-    $startDscConfigurationParameters["Path"] = $OutputPath
-
-    Start-DscConfiguration @startDscConfigurationParameters
     Invoke-TestCleanup
 }
