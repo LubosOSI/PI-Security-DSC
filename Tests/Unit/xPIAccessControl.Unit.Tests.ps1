@@ -169,7 +169,7 @@ try
                     }
                     else
                     {
-                        It "Should not attempt to $($testCase.Verb) the $TargetObject" {
+                        It "Should attempt to $($testCase.Verb) the $TargetObject" {
                             Set-TargetResource @InputParameters
                             Assert-MockCalled -CommandName Set-PIAccessControl -Exactly 1 -Scope It
                         }
@@ -216,7 +216,7 @@ try
                 Mock -CommandName $MockCommandName {} -Verifiable
                 Context "When a resource of Type '$type' is called" {
                     It 'Should call the right helper function' {
-                        Set-PIAccessControl -PIDataArchive $testPIDataArchive -Name "Test" -Type $type -AccessControlList $TestCase
+                        Set-PIAccessControl -PIDataArchive $testPIDataArchive -Name "Test" -Type $type -AccessControlList $TestCase -Ensure "Present" -Identity "Unit"
                         Assert-MockCalled -CommandName $MockCommandName -Exactly 1 -Scope It
                     }
                 }
@@ -286,7 +286,7 @@ try
 
         Describe "$TargetModule\ConvertTo-PIAccessControlString" {
             
-            Context 'When a supported value is passed' {
+            Context 'When an empty value and Present are passed' {
             $TestCase = @{
                     HashTable = @{
                         piadmin = "Read, Write"
@@ -295,10 +295,48 @@ try
                         PIWorld = ""
                     }
                     String = "piadmin: A(r,w) | piadmins: A(r,w) | PIReaders: A(r) | PIWorld: A()"
+                    Identity = "PIWorld"
+                    Ensure = "Present"
                 }
 
                 It 'Should return the expected value' {
-                    $result = ConvertTo-PIAccessControlString $TestCase["HashTable"]
+                    $result = ConvertTo-PIAccessControlString $TestCase["HashTable"] -Identity $TestCase["Identity"] -Ensure $TestCase["Ensure"]
+                    $result | Should -Be $TestCase["String"]
+                }
+            }
+            Context 'When an empty value and Absent are passed' {
+            $TestCase = @{
+                    HashTable = @{
+                        piadmin = "Read, Write"
+                        piadmins = "Read, Write"
+                        PIReaders = "Read"
+                        PIWorld = ""
+                    }
+                    String = "piadmin: A(r,w) | piadmins: A(r,w) | PIReaders: A(r)"
+                    Identity = 'PIWorld'
+                    Ensure = 'Absent'
+                }
+
+                It 'Should return the expected value' {
+                    $result = ConvertTo-PIAccessControlString $TestCase["HashTable"] -Identity $TestCase["Identity"] -Ensure $TestCase["Ensure"]
+                    $result | Should -Be $TestCase["String"]
+                }
+            }
+            Context 'When a supported value and Present are passed' {
+            $TestCase = @{
+                    HashTable = @{
+                        piadmin = "Read, Write"
+                        piadmins = "Read, Write"
+                        PIReaders = "Read"
+                        PIWorld = ""
+                    }
+                    String = "piadmin: A(r,w) | piadmins: A(r,w) | PIReaders: A(r) | PIWorld: A()"
+                    Identity = 'piadmins'
+                    Ensure = 'Present'
+                }
+
+                It 'Should return the expected value' {
+                    $result = ConvertTo-PIAccessControlString $TestCase["HashTable"] -Identity $TestCase["Identity"] -Ensure $TestCase["Ensure"]
                     $result | Should -Be $TestCase["String"]
                 }
             }
@@ -308,7 +346,7 @@ try
                         PIWorld = ""
                     }
                 It "Should throw Invalid access string 'Delete' specified." {
-                    { ConvertTo-PIAccessControlString $TestCase } | Should -Throw "Invalid access string 'Delete' specified."
+                    { ConvertTo-PIAccessControlString $TestCase -Identity "piadmin" } | Should -Throw "Invalid access string 'Delete' specified."
                 }
             }
         }

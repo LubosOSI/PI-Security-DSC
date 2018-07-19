@@ -45,18 +45,14 @@ function Get-TargetResource
 
     if($AccessControlList.ContainsKey($Identity))
     {
+        $Ensure = "Present"
         $Access = $AccessControlList[$Identity]
-    }
-
-    if([string]::IsNullOrEmpty($Access))
-    {
-        $Ensure = "Absent"
-        Write-Verbose "Access for $Identity on $Type\$Name not found"
+        Write-Verbose "Found $Type\$Name with $Access access for $Identity"
     }
     else
     {
-        $Ensure = "Present"
-        Write-Verbose "Found $Type\$Name with $Access access for $Identity"
+        $Ensure = "Absent"
+        Write-Verbose "Access for $Identity on $Type\$Name not found"
     }
 
     return @{
@@ -110,14 +106,14 @@ function Set-TargetResource
             Write-Verbose "Updating entry for $Identity to $Access"
             $AccessControlList[$Identity] = $Access
         }
-        else
+        elseif($Ensure -eq "Present")
         {
             Write-Verbose "Adding entry for $Identity with $Access"
             $AccessControlList.Add($Identity, $Access)
         }
 
         # Write the full updated ACL.
-        Set-PIAccessControl -PIDataArchive $PIDataArchive -Name $Name -Type $Type -AccessControlList $AccessControlList -Verbose:$VerbosePreference
+        Set-PIAccessControl -PIDataArchive $PIDataArchive -Name $Name -Type $Type -Identity $Identity -Ensure $Ensure -AccessControlList $AccessControlList -Verbose:$VerbosePreference
     }
 }
 
@@ -234,7 +230,15 @@ function ConvertTo-PIAccessControlString
     param(
         [parameter(Mandatory=$true)]
         [System.Collections.Hashtable]
-        $Hashtable
+        $Hashtable,
+
+        [ValidateSet('Present','Absent')]
+        [System.String]
+        $Ensure = 'Present',
+
+        [parameter(Mandatory=$true)]
+        [System.String]
+        $Identity
     )
 
     Write-Verbose "Converting Hashtable to equivalent String"
@@ -254,7 +258,14 @@ function ConvertTo-PIAccessControlString
             ""            { $Access = "A()"; break }
             default       { throw "Invalid access string '$($Hashtable[$key])' specified."}
         }
-        $stringACL += $space + $key + $identityDelimiter + $space + $Access + $space + $entryDelimiter
+        if($key.ToLower() -eq $Identity.ToLower() -and $Ensure -eq 'Absent')
+        {
+            Write-Verbose "Omitting $Identity from Security string."
+        }
+        else
+        {
+            $stringACL += $space + $key + $identityDelimiter + $space + $Access + $space + $entryDelimiter
+        }
     }
     $stringACL = $stringACL.TrimEnd($entryDelimiter).Trim($space)
 
@@ -309,12 +320,16 @@ function Set-PIAccessControl
         [parameter(Mandatory=$true)]
         [System.String]
         $Type,
+        [System.String]
+        $Identity,
+        [System.String]
+        $Ensure,
         [parameter(Mandatory=$false)]
         [System.Collections.Hashtable]
         $AccessControlList
     )
 
-    [System.String]$Security = ConvertTo-PIAccessControlString -Hashtable $AccessControlList
+    [System.String]$Security = ConvertTo-PIAccessControlString -Hashtable $AccessControlList -Ensure $Ensure -Identity $Identity
 
     Write-Verbose "Setting security on $Type\$Name to: $Security"
     if($Type -eq "PIDatabaseSecurity")
