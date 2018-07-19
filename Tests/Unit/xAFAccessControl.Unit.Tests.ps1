@@ -32,7 +32,7 @@ try
     Invoke-TestSetup
 
     InModuleScope $script:DSCResourceName {
-
+        $TargetModule = 'xAFAccessControl'
         $testAFServer = 'localhost'
         $defaultParameters = @{
             AFServer = $testAFServer
@@ -168,7 +168,7 @@ try
         }
 
         # Get
-        Describe "$script:DSCResourceName\Get-TargetResource" {
+        Describe "$TargetModule\Get-TargetResource" {
 
             Mock -CommandName Get-AFSecurityObject {
                     return $null
@@ -211,7 +211,7 @@ try
         }
 
         # Set
-        Describe "$script:DSCResourceName\Set-TargetResource" {
+        Describe "$TargetModule\Set-TargetResource" {
             Mock -CommandName Remove-AFIdentityAccess -Verifiable
             Mock -CommandName Add-AFIdentityAccess -Verifiable
 
@@ -241,7 +241,7 @@ try
             }
         }
 
-        Describe "$script:DSCResourceName\Test-TargetResource" {
+        Describe "$TargetModule\Test-TargetResource" {
             # Run through all the test cases
             foreach($key in $testCases.Keys)
             {
@@ -339,7 +339,7 @@ try
             }
         }
 
-        Describe "$script:DSCResourceName\ConvertTo-CanonicalAFSecurityItem" {
+        Describe "$TargetModule\ConvertTo-CanonicalAFSecurityItem" {
             Context 'When supported values are input' {
                 $SupportedValues = @(
                     "Default",

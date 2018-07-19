@@ -8,7 +8,7 @@ $ConfigurationData = @{
     )
 }
 
-Configuration xAFAccessControl_GrantAccess
+Configuration xAFAccessControl_Set
 {
     param(
         [System.String] $Access = "Read, Read Data",
@@ -61,7 +61,7 @@ Configuration xAFAccessControl_GrantAccess
     }
 }
 
-Configuration xAFAccessControl_RevokeAccess
+Configuration xAFAccessControl_Remove
 {
     param(
         [System.String] $NodeName = "localhost",
@@ -101,7 +101,7 @@ Configuration xAFAccessControl_RevokeAccess
     }
 }
 
-Configuration xAFAccessControl_CleanUpAccessTest
+Configuration xAFAccessControl_CleanUp
 {
     param(
         [System.String] $NodeName = "localhost"

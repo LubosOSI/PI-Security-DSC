@@ -32,8 +32,7 @@ function Get-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PIPoint -Connection $Connection -Name $Name  -Attributes @('ptsecurity','datasecurity')
+    $PIResource = Get-PIPointDSC -PIDataArchive $PIDataArchive -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -68,16 +67,11 @@ function Set-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-
     if($Ensure -eq 'Absent')
     {
-        Remove-PIPoint -Connection $Connection -Name $Name -ErrorAction SilentlyContinue
+        throw "Removal of PI Points not supported."
     }
-    else
-    {
-        Set-PIPoint -Connection $Connection -Name $Name -Attributes @{ ptsecurity=$PtSecurity; datasecurity=$DataSecurity }
-    }
+    Set-PIPointDSC -PIDataArchive $PIDataArchive -Name $Name -PtSecurity $PtSecurity -DataSecurity $DataSecurity 
 }
 
 function Test-TargetResource
@@ -117,6 +111,41 @@ function Test-TargetResource
     {
         return $($PIResource.Ensure -eq 'Absent' -and $Ensure -eq 'Absent')
     }
+}
+
+function Get-PIPointDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PIPoint -Connection $Connection -Name $Name  -Attributes @('ptsecurity','datasecurity')
+    return $PIResource
+}
+
+function Set-PIPointDSC
+{
+    param(
+        [System.String]
+        $PtSecurity,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $DataSecurity,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PIPoint -Connection $Connection -Name $Name -Attributes @{ ptsecurity=$PtSecurity; datasecurity=$DataSecurity }
 }
 
 Export-ModuleMember -Function *-TargetResource

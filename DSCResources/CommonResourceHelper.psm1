@@ -128,15 +128,16 @@ function Set-PIResourceParametersPreserved
     )
 
     $CommonParameters = @('Ensure', 'PIDataArchive')
+    # Start with the assumption that no values will be changed
     $ParametersToPreserve = $CurrentParameters
     # Explicitly specified parameters and common parameters should not be preserved.
-    $ParametersToDefer = $SpecifiedParameters + $CommonParameters
-    Foreach($Parameter in $ParametersToDefer)
+    $ParametersToNotPreserve = $SpecifiedParameters + $CommonParameters
+    Foreach($Parameter in $ParametersToNotPreserve)
     {
        Write-Verbose "NotPreserving: $($Parameter)"
        $null = $ParametersToPreserve.Remove($Parameter)
     }
-    # Set the parameter values we want to keep to the current resource values.
+    # Now that we have the parameters we want to keep, set their values in the parameter table.
     Foreach($Parameter in $ParametersToPreserve.GetEnumerator())
     {
         Write-Verbose "Preserving: $($Parameter.Key): $($Parameter.Value)"
@@ -191,11 +192,30 @@ function ConvertTo-FullAFPath
     return $FullPath
 }
 
+function Get-AFIdentityDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $AFServer,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name
+    )
+
+    $AF = Connect-AFServerUsingSDK -AFServer $AFServer
+    $identity = $AF.SecurityIdentities[$Name]
+
+    return $identity
+}
+
 Export-ModuleMember -Function @(
                                     'Get-PIResource_Ensure',
                                     'Compare-PIDataArchiveACL',
                                     'Compare-PIResourceGenericProperties',
                                     'Set-PIResourceParametersPreserved',
                                     'Connect-AFServerUsingSDK',
-                                    'ConvertTo-FullAFPath'
+                                    'ConvertTo-FullAFPath',
+                                    'Get-AFIdentityDSC'
                                 )

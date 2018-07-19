@@ -34,11 +34,9 @@ function Get-TargetResource
         [System.String]
         $Name
     )
-
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-
-    $PIResource = Get-PIMapping -Connection $Connection | Where-Object { ($_.PrincipalName.ToLower() -eq $PrincipalName.ToLower()) }
-
+    
+    Write-Verbose "Getting PI Mapping $($Name)"
+    $PIResource = Get-PIMappingDSC -PIDataArchive $PIDataArchive -PrincipalName $PrincipalName
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -81,8 +79,6 @@ function Set-TargetResource
         $Identity
     )
 
-   # Connect and get the resource
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
     $PIResource = Get-TargetResource -PrincipalName $PrincipalName -PIDataArchive $PIDataArchive
 
     # If the resource is supposed to be present we will either add it or set it.
@@ -95,11 +91,11 @@ function Set-TargetResource
             if(![System.String]::IsNullOrEmpty($Name) -and $Name -ne $PIResource.Name)
             {
                 Write-Verbose "Renaming PI Mapping $($PIResource.Name) to $($Name)"
-                Rename-PIMapping -Connection $Connection -ExistingName $PIResource.Name -NewName $Name
+                Rename-PIMappingDSC -PIDataArchive $PIDataArchive -ExistingName $PIResource.Name -NewName $Name
             }
-            # Since the mapping is present, we must perform due diligence to preserve settings
-            # not explicitly defined in the config. Remove $PSBoundParameters and those not used
-            # for the write operation (Ensure, PIDataArchive).
+            <# Since the mapping is present, we must perform due diligence to preserve settings
+            not explicitly defined in the config. Remove $PSBoundParameters and those not used
+            for the write operation (Ensure, PIDataArchive). #>
             $ParametersToOmit = @('Ensure', 'PIDataArchive') + $PSBoundParameters.Keys
             $ParametersToOmit | Foreach-Object { $null = $PIResource.Remove($_) }
 
@@ -110,9 +106,9 @@ function Set-TargetResource
             }
 
             Write-Verbose "Setting PI Mapping $($Name)"
-            Set-PIMapping -Connection $Connection -Name $Name `
+            Set-PIMappingDSC -PIDataArchive $PIDataArchive -Name $Name `
                                 -Identity $Identity -PrincipalName $PrincipalName `
-                                -Description $Description -Disabled:$(!$Enabled)
+                                -Description $Description -Enabled $Enabled
         }
         else
         {
@@ -120,18 +116,17 @@ function Set-TargetResource
             {
                 $Name = $PrincipalName
             }
-            # Add the Absent mapping.
             Write-Verbose "Adding PI Mapping $($Name)"
-            Add-PIMapping -Connection $Connection -Name $Name `
-                            -Identity $Identity -PrincipalName $PrincipalName `
-                            -Description $Description -Disabled:$(!$Enabled)
+            Add-PIMappingDSC -PIDataArchive $PIDataArchive -Name $Name `
+                                -Identity $Identity -PrincipalName $PrincipalName `
+                                -Description $Description -Enabled $Enabled
         }
     }
     # If the resource is supposed to be absent we remove it.
     else
     {
         Write-Verbose "Removing PI Mapping $($PIResource.Name)"
-        Remove-PIMapping -Connection $Connection -Name $PIResource.Name
+        Remove-PIMappingDSC -PIDataArchive $PIDataArchive -Name $PIResource.Name
     }
 }
 
@@ -168,6 +163,109 @@ function Test-TargetResource
     $PIResource = Get-TargetResource -PrincipalName $PrincipalName -PIDataArchive $PIDataArchive
 
     return $(Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource -Verbose:$VerbosePreference)
+}
+
+function Get-PIMappingDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $PrincipalName,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PIMapping -Connection $Connection | Where-Object { ($_.PrincipalName.ToLower() -eq $PrincipalName.ToLower()) }
+    return $PIResource
+}
+
+function Set-PIMappingDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $PrincipalName,
+
+        [System.String]
+        $Description,
+
+        [System.String]
+        $PIDataArchive = "localhost",
+
+        [System.Boolean]
+        $Enabled,
+
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Identity
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PIMapping -Connection $Connection -Name $Name `
+                                -Identity $Identity -PrincipalName $PrincipalName `
+                                -Description $Description -Disabled:$(!$Enabled)
+}
+
+function Add-PIMappingDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $PrincipalName,
+
+        [System.String]
+        $Description,
+
+        [System.String]
+        $PIDataArchive = "localhost",
+
+        [System.Boolean]
+        $Enabled,
+
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Identity
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Add-PIMapping -Connection $Connection -Name $Name `
+                            -Identity $Identity -PrincipalName $PrincipalName `
+                            -Description $Description -Disabled:$(!$Enabled)
+}
+
+function Remove-PIMappingDSC
+{
+    param(
+        [System.String]
+        $PIDataArchive = "localhost",
+
+        [System.String]
+        $Name
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Remove-PIMapping -Connection $Connection -Name $Name
+}
+
+function Rename-PIMappingDSC
+{
+    param(
+        [System.String]
+        $PIDataArchive = "localhost",
+
+        [System.String]
+        $Name,
+
+        [System.String]
+        $ExistingName
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Rename-PIMapping -Connection $Connection -ExistingName $ExistingName -NewName $Name   
 }
 
 Export-ModuleMember -Function *-TargetResource

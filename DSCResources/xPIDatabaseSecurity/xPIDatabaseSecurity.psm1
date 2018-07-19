@@ -32,8 +32,7 @@ function Get-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PIDatabaseSecurity -Connection $Connection -Name $Name
+    $PIResource = Get-PIDatabaseSecurityDSC -PIDataArchive $PIDataArchive -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -64,46 +63,33 @@ function Set-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-
     if($Ensure -eq 'Absent')
     {
-        <# Setting database security to only piadmin access is as restrictive as it can be
-        since piadmin cannot be denied. #>
-        Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security "piadmin: A(r,w)"
+        throw "Removing PISecurityDatabase access control is not supported."
     }
     else
     {
         if($Name -eq 'PIBATCHLEGACY')
         {
-            if($(Get-Service pibatch -ComputerName $PIDataArchive).Status -eq 'Running')
+            if($(Get-Service pibatch -ComputerName $PIDataArchive).Status -ne 'Running')
             {
-                Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security
-            }
-            else
-            {
-                Write-Verbose "PI Batch Subsystem must be running to edit database security for PIBATCHLEGACY"
-                Write-Verbose "PI Batch Subsystem is no longer needed.  It is recommended to disable the service"
-                Write-Verbose "and ignore the PIBATCHLEGACY database security entry."
+                $msg = "PI Batch Subsystem must be running to edit database security for PIBATCHLEGACY"
+                $msg += " PI Batch Subsystem is no longer needed.  It is recommended to disable the service"
+                $msg += " and ignore the PIBATCHLEGACY database security entry."
+                throw $msg
             }
         }
         elseif($Name -eq 'AFLINK')
         {
             if($(Get-Service piaflink -ComputerName $PIDataArchive).Status -eq 'Running')
             {
-                Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security
-            }
-            else
-            {
-                Write-Verbose "PI AF Link Subsystem must be running to edit database security for PIAFLINK"
-                Write-Verbose "If the system does not require MDB synchronization, you can disable the service"
-                Write-Verbose "and ignore teh PIAFLINK database security entry."
+                $msg = "PI AF Link Subsystem must be running to edit database security for PIAFLINK"
+                $msg += " If the system does not require MDB synchronization, you can disable the service"
+                $msg += " and ignore the PIAFLINK database security entry."
+                throw $msg
             }
         }
-        else
-        {
-            Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security
-        }
+        Set-PIDatabaseSecurityDSC -PIDataArchive $PIDataArchive -Name $Name -Security $Security
     }
 }
 
@@ -138,6 +124,38 @@ function Test-TargetResource
     {
         return $($PIResource.Ensure -eq 'Absent' -and $Ensure -eq 'Absent')
     }
+}
+
+function Get-PIDatabaseSecurityDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PIDatabaseSecurity -Connection $Connection -Name $Name
+    return $PIResource
+}
+
+function Set-PIDatabaseSecurityDSC
+{
+    param(
+        [System.String]
+        $Security,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PIDatabaseSecurity -Connection $Connection -Name $Name -Security $Security
 }
 
 Export-ModuleMember -Function *-TargetResource
