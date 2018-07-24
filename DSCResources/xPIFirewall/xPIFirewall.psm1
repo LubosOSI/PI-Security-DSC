@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,8 +32,8 @@ function Get-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PIFirewall -Connection $Connection -Hostmask $Hostmask -ErrorAction SilentlyContinue
+    Write-Verbose "Getting PI Firewall entry '$Hostmask'"
+    $PIResource = Get-PIFirewallDSC -PIDataArchive $PIDataArchive -Hostmask $Hostmask -ErrorAction SilentlyContinue
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -65,15 +65,15 @@ function Set-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    
     if($Ensure -eq 'Absent')
-    { 
-        Remove-PIFirewall -Connection $Connection -Hostmask $Hostmask
+    {
+        Write-Verbose "Removing PI Firewall entry '$Hostmask'"
+        Remove-PIFirewallDSC -PIDataArchive $PIDataArchive -Hostmask $Hostmask
     }
     else
-    { 
-        Add-PIFirewall -Connection $Connection -Hostmask $Hostmask -Value $Value 
+    {
+        Write-Verbose "Adding PI Firewall entry '$Hostmask'"
+        Add-PIFirewallDSC -PIDataArchive $PIDataArchive -Hostmask $Hostmask -Value $Value
     }
 }
 
@@ -99,9 +99,59 @@ function Test-TargetResource
         $PIDataArchive = "localhost"
     )
 
+    Write-Verbose "Testing PI Firewall entry '$Hostmask'"
     $PIResource = Get-TargetResource -Hostmask $Hostmask -PIDataArchive $PIDataArchive
-    
+
     return $(Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource -Verbose:$VerbosePreference)
+}
+
+function Get-PIFirewallDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Hostmask,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PIFirewall -Connection $Connection -Hostmask $Hostmask -ErrorAction SilentlyContinue
+
+    return $PIResource
+}
+
+function Add-PIFirewallDSC
+{
+    param(
+        [ValidateSet("Allow","Disallow","Unknown")]
+        [System.String]
+        $Value,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Hostmask,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Add-PIFirewall -Connection $Connection -Hostmask $Hostmask -Value $Value
+}
+
+function Remove-PIFirewallDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Hostmask,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Remove-PIFirewall -Connection $Connection -Hostmask $Hostmask
 }
 
 Export-ModuleMember -Function *-TargetResource

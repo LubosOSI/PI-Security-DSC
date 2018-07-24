@@ -1,0 +1,12 @@
+
+[ClassVersion("0.1.0.0"), FriendlyName("AFAccessControl")]
+class xAFAccessControl : OMI_BaseResource
+{
+    [Write, ValueMap{"Present","Absent"}, Values{"Present","Absent"}] String Ensure;
+    [Required, ValueMap{"AFSecurityItem","AFElement"}, Values{"AFSecurityItem","AFElement"}, Description("Type of object that access applies to.")] String Type;
+    [Required, Description("PI AF Server name for connection")] String AFServer;
+    [Key, Description("Unique path.")] String Path;
+    [Required, Description("Identity to assign access.")] String Identity;
+	[Write, ValueMap{"Allow","Deny"}, Values{"Allow","Deny"}] String Action;
+	[Write, Description("Level of access.")] String Access;
+};

@@ -25,4 +25,3 @@ class xPIPoint : OMI_BaseResource
     [Write] String DataSecurity;
     [Write, Description("PI Data Archive name for connection")] String PIDataArchive;
 };
-

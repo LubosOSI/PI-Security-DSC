@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,8 +32,7 @@ function Get-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PIPoint -Connection $Connection -Name $Name  -Attributes @('ptsecurity','datasecurity')
+    $PIResource = Get-PIPointDSC -PIDataArchive $PIDataArchive -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -68,16 +67,11 @@ function Set-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    
     if($Ensure -eq 'Absent')
-    { 
-        Remove-PIPoint -Connection $Connection -Name $Name -ErrorAction SilentlyContinue
+    {
+        throw "Removal of PI Points not supported."
     }
-    else
-    { 
-        Set-PIPoint -Connection $Connection -Name $Name -Attributes @{ ptsecurity=$PtSecurity; datasecurity=$DataSecurity } 
-    }
+    Set-PIPointDSC -PIDataArchive $PIDataArchive -Name $Name -PtSecurity $PtSecurity -DataSecurity $DataSecurity 
 }
 
 function Test-TargetResource
@@ -105,18 +99,53 @@ function Test-TargetResource
     )
 
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
-    
+
     if($PIResource.Ensure -eq 'Present' -and $Ensure -eq 'Present')
     {
         $PtSecurityMatch = Compare-PIDataArchiveACL -Desired $PtSecurity -Current $PIResource.PtSecurity
         $DataSecurityMatch = Compare-PIDataArchiveACL -Desired $DataSecurity -Current $PIResource.DataSecurity
-        
+
         return $($PtSecurityMatch -and $DataSecurityMatch)
     }
     else
     {
         return $($PIResource.Ensure -eq 'Absent' -and $Ensure -eq 'Absent')
     }
+}
+
+function Get-PIPointDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PIPoint -Connection $Connection -Name $Name  -Attributes @('ptsecurity','datasecurity')
+    return $PIResource
+}
+
+function Set-PIPointDSC
+{
+    param(
+        [System.String]
+        $PtSecurity,
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $DataSecurity,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PIPoint -Connection $Connection -Name $Name -Attributes @{ ptsecurity=$PtSecurity; datasecurity=$DataSecurity }
 }
 
 Export-ModuleMember -Function *-TargetResource

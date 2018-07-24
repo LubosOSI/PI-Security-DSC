@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,8 +32,8 @@ function Get-TargetResource
         $PIDataArchive = "localhost"
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PITuningParameter -Connection $Connection -Name $Name
+    Write-Verbose "Getting PITuningParameter: '$Name'"
+    $PIResource = Get-PITuningParameterDSC -PIDataArchive $PIDataArchive -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -64,16 +64,16 @@ function Set-TargetResource
         [System.String]
         $PIDataArchive = "localhost"
     )
-    
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    
+
     if($Ensure -eq 'Absent')
-    { 
-        Reset-PITuningParameter -Connection $Connection -Name $Name 
+    {
+        Write-Verbose "Resetting PITuningParameter: '$Name' to default value."
+        Reset-PITuningParameterDSC -PIDataArchive $PIDataArchive -Name $Name
     }
     else
-    { 
-        Set-PITuningParameter -Connection $Connection -Name $Name -Value $Value 
+    {
+        Write-Verbose "Setting PITuningParameter '$Name' to $Value."
+        Set-PITuningParameterDSC -PIDataArchive $PIDataArchive -Name $Name -Value $Value
     }
 }
 
@@ -98,16 +98,66 @@ function Test-TargetResource
         $PIDataArchive = "localhost"
     )
 
+    Write-Verbose "Testing PITuningParameter: '$Name'"
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
-    
+
     if($PIResource.Ensure -eq 'Present' -and $Ensure -eq 'Present')
     {
-        return $($PIResource.Value -eq $Value -or ($(IsNullOrEmpty $PIResource.Value) -and $PIResource.Default -eq $Value))
+        return $($PIResource.Value -eq $Value -or (([System.String]::IsNullOrEmpty($PIResource.Value)) -and $PIResource.Default -eq $Value))
     }
     else
     {
         return $($PIResource.Ensure -eq 'Absent' -and $Ensure -eq 'Absent')
     }
+}
+
+function Get-PITuningParameterDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PITuningParameter -Connection $Connection -Name $Name
+    return $PIResource
+}
+
+function Set-PITuningParameterDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $Value,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Set-PITuningParameter -Connection $Connection -Name $Name -Value $Value
+}
+
+function Reset-PITuningParameterDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name,
+
+        [System.String]
+        $PIDataArchive = "localhost"
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Reset-PITuningParameter -Connection $Connection -Name $Name
 }
 
 Export-ModuleMember -Function *-TargetResource

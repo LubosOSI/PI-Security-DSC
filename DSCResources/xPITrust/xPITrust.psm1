@@ -4,9 +4,9 @@
 # * Licensed under the Apache License, Version 2.0 (the "License");
 # * you may not use this file except in compliance with the License.
 # * You may obtain a copy of the License at
-# * 
+# *
 # *   <http://www.apache.org/licenses/LICENSE-2.0>
-# * 
+# *
 # * Unless required by applicable law or agreed to in writing, software
 # * distributed under the License is distributed on an "AS IS" BASIS,
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,8 +32,8 @@ function Get-TargetResource
         $Name
     )
 
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
-    $PIResource = Get-PITrust -Connection $Connection -Name $Name
+    Write-Verbose "Getting PITrust: '$Name'"
+    $PIResource = Get-PITrustDSC -PIDataArchive $PIDataArchive -Name $Name
     $Ensure = Get-PIResource_Ensure -PIResource $PIResource -Verbose:$VerbosePreference
 
     return @{
@@ -96,12 +96,10 @@ function Set-TargetResource
         $Ensure
     )
 
-    # Connect and get the resource
-    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
 
     $ParameterTable = @{
-            Connection = $Connection 
+            PIDataArchive = $PIDataArchive
             Name = $Name
             Identity = $Identity
             NetworkPath = $NetworkPath
@@ -116,7 +114,7 @@ function Set-TargetResource
 
     # If the resource is supposed to be present we will either add it or set it.
     if($Ensure -eq 'Present')
-    {  
+    {
         if($PIResource.Ensure -eq "Present")
         {
             $SpecifiedParameters = [System.String[]]$PSBoundParameters.Keys
@@ -125,22 +123,22 @@ function Set-TargetResource
                                                                 -cp $PIResource `
                                                                 -Verbose:$VerbosePreference
              # Set the relevant props
-             Write-Verbose "Setting PI Trust $($Name)"
-             Set-PITrust @ParameterTable
+             Write-Verbose "Setting PITrust: '$Name'"
+             Set-PITrustDSC $ParameterTable
         }
         else
         {
             Write-Verbose $PIResource.Ensure
-            # Add the Absent Trust with the props. 
-            Write-Verbose "Adding PI Trust $($Name)"          
-            Add-PITrust @ParameterTable
+            # Add the Absent Trust with the props.
+            Write-Verbose "Adding PITrust: '$Name'"
+            Add-PITrustDSC $ParameterTable
         }
     }
     # If the resource is supposed to be absent we remove it.
     else
     {
-        Write-Verbose "Removing PI Trust $($PIResource.Name)"
-        Remove-PITrust -Connection $Connection -Name $PIResource.Name   
+        Write-Verbose "Removing PITrust: '$($PIResource.Name)'"
+        Remove-PITrustDSC -PIDataArchive $PIDataArchive -Name $PIResource.Name
     }
 }
 
@@ -189,9 +187,68 @@ function Test-TargetResource
         $Ensure
     )
 
+    Write-Verbose "Testing PITrust: '$Name'"
     $PIResource = Get-TargetResource -Name $Name -PIDataArchive $PIDataArchive
-    
+
     return $(Compare-PIResourceGenericProperties -Desired $PSBoundParameters -Current $PIResource -Verbose:$VerbosePreference)
+}
+
+function Get-PITrustDSC
+{
+    param(
+        [System.String]
+        $PIDataArchive = "localhost",
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $PIResource = Get-PITrust -Connection $Connection -Name $Name
+    return $PIResource
+}
+
+function Set-PITrustDSC
+{
+    param
+    (
+        [parameter(Mandatory = $true)]
+        [System.Collections.Hashtable] 
+        $ParameterTable
+    )
+    $PIDataArchive = $ParameterTable["PIDataArchive"]
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $ParameterTable.Remove("PIDataArchive")
+    $ParameterTable.Add("Connection",$Connection)
+    Set-PITrust @ParameterTable
+}
+
+function Add-PITrustDSC
+{
+    param(
+        [parameter(Mandatory = $true)]
+        [System.Collections.Hashtable] 
+        $ParameterTable
+    )
+    $PIDataArchive = $ParameterTable["PIDataArchive"]
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    $ParameterTable.Remove("PIDataArchive")
+    $ParameterTable.Add("Connection",$Connection)
+    Add-PITrust @ParameterTable
+}
+
+function Remove-PITrustDSC
+{
+    param(
+        [System.String]
+        $PIDataArchive = "localhost",
+
+        [parameter(Mandatory = $true)]
+        [System.String]
+        $Name
+    )
+    $Connection = Connect-PIDataArchive -PIDataArchiveMachineName $PIDataArchive
+    Remove-PITrust -Connection $Connection -Name $Name
 }
 
 Export-ModuleMember -Function *-TargetResource
